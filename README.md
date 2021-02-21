@@ -46,6 +46,7 @@ wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/main/ha
 
 After script prints `Done.` you have Home Assistant installed. 
 Start the service or reboot the device to get it start automatically.
+The web interface will be on 8123 port after all components load.
 
 ![Home Assitant](homeassistant.png)
 
@@ -56,3 +57,28 @@ In this case restarting HA could work.
 
 Other components are not tested and may require additional changed in 
 requirement versions or python libraries.
+
+## ZHA usage on Xiaomi Gateway
+
+The component uses internal UART to communicate with ZigBee chip.
+The chip has to be flashed with a proper firmware to be able to 
+communicate with the HA. The recommended firmware is 
+
+https://github.com/openlumi/ZiGate/releases/download/snapshot-20201008/ZiGate_3.1_cd_fix_leak__JN5169_COORDINATOR_115200.bin
+
+You could try another Zigate firmwares for JN5169 chip. The baud rate
+must be 115200 as it is hardcoded in zigpy-zigate.
+
+## Enabling other components and installing custom
+
+You may want to add more components to your HA installation.
+In this case you have to copy the directory with component to 
+`/usr/lib/python3.7/site-packages/homeassistant-2021.1.5-py3.7.egg/homeassistant/components/`
+
+or create `custom_components` directory in `/etc/homeassistant` and
+copy it there.
+
+Try to install requirements from `manifest.json` with `pip3` manually
+to check it installs and doesn't require pre-compiled C libraries.
+Otherwise, you have to cross-compile python3 dependencies and install
+them as `ipk` packages.
