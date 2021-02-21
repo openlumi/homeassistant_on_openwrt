@@ -19,9 +19,12 @@ Add the openlumi feed to gain access to a few precompiled python requirements.
 Skip this step if you have already added this feed.
 
 ```sh
-wget https://openlumi.github.io/openwrt-packages/public.key
-opkg-key add public.key
-echo 'src/gz openlumi https://openlumi.github.io/openwrt-packages/packages/19.07/arm_cortex-a9_neon' >> /etc/opkg/customfeeds.conf
+(! grep -q openlumi /etc/opkg/customfeeds.conf) && (
+wget -q https://openlumi.github.io/openwrt-packages/public.key -O /tmp/public.key && 
+opkg-key add /tmp/public.key && rm /tmp/public.key &&
+echo 'src/gz openlumi https://openlumi.github.io/openwrt-packages/packages/19.07/arm_cortex-a9_neon' >> /etc/opkg/customfeeds.conf &&
+echo "Feed added successfully!"
+) || echo "Feed added already. Skip."
 ```
 
 Then go to generic installation
