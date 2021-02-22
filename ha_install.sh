@@ -102,6 +102,9 @@ mutagen==1.45.1
 pyotp==2.3.0
 gTTS==2.2.1
 
+# xiaomi_gateway3      
+paho-mqtt==1.5.0
+
 # zha requirements
 pyserial==3.5
 zha-quirks==0.0.51
@@ -232,7 +235,8 @@ mv \
   onboarding \
   persistent_notification \
   person \
-  recorder \
+  recorder \    
+  remote \
   scene \
   script \
   search \
