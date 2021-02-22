@@ -102,6 +102,17 @@ mutagen==1.45.1
 pyotp==2.3.0
 gTTS==2.2.1
 
+# telegram
+python-telegram-bot==13.1
+PySocks==1.7.1
+decorator==4.4.2 
+tornado==6.1
+tzlocal==2.1 
+APScheduler==3.6.3
+
+# ssdp
+async-upnp-client==0.14.13
+
 # xiaomi_gateway3      
 paho-mqtt==1.5.0
 
@@ -249,7 +260,9 @@ mv \
   switch \
   system_health \
   system_log \
-  timer \
+  timer \  
+  telegram \
+  telegram_bot \
   tts \
   updater \
   vacuum \
@@ -269,7 +282,8 @@ mv \
   panel_custom \
   brother \
   discovery \
-  mqtt \
+  mqtt \      
+  upnp \
   mpd \
   ../components
 cd ..
