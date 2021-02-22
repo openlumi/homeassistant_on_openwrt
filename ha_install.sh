@@ -205,7 +205,8 @@ mv \
   device_automation \
   device_tracker \
   fan \
-  frontend \
+  frontend \        
+  generic \
   google_assistant \
   google_translate \
   group \
