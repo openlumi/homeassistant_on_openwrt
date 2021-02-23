@@ -131,6 +131,16 @@ pyhaversion==3.4.2
 pytest-runner==5.3.0
 semantic-version==2.8.5
 
+# rest
+jsonpath==0.82
+xmltodict==0.12.0
+httpx==0.16.1
+httpcore-0.12.3
+sniffio-1.2.0
+h11-0.12.0
+rfc3986-1.4.0
+
+
 # zha requirements
 pyserial==3.5
 zha-quirks==0.0.51
@@ -268,7 +278,8 @@ mv \
   person \   
   ping \
   recorder \    
-  remote \
+  remote \   
+  rest \
   scene \
   script \
   search \
