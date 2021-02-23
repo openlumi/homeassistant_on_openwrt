@@ -168,7 +168,24 @@ cd /root
 wget https://files.pythonhosted.org/packages/8f/9b/aa394eb6265a8ed90af2b318d1a4c844e6a35de22f7a24e275161322cccc/home-assistant-frontend-20201229.1.tar.gz -O home-assistant-frontend-20201229.1.tar.gz
 tar -zxf home-assistant-frontend-20201229.1.tar.gz
 cd home-assistant-frontend-20201229.1
-mv hass_frontend /usr/lib/python3.7/site-packages/
+find ./hass_frontend/frontend_es5 -name '*.js' -exec rm -rf {} \;
+find ./hass_frontend/frontend_es5 -name '*.map' -exec rm -rf {} \;
+find ./hass_frontend/frontend_es5 -name '*.txt' -exec rm -rf {} \;
+find ./hass_frontend/frontend_latest -name '*.js' -exec rm -rf {} \;
+find ./hass_frontend/frontend_latest -name '*.map' -exec rm -rf {} \;
+find ./hass_frontend/frontend_latest -name '*.txt' -exec rm -rf {} \;
+
+find ./hass_frontend/static/mdi -name '*.json' -maxdepth 1 -exec rm -rf {} \;
+find ./hass_frontend/static/polyfills -name '*.js' -maxdepth 1 -exec rm -rf {} \;
+find ./hass_frontend/static/polyfills -name '*.map' -maxdepth 1 -exec rm -rf {} \;
+
+# shopping list and calendar missing gzipped
+gzip ./hass_frontend/static/translations/calendar/*
+gzip ./hass_frontend/static/translations/shopping_list/*
+
+find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
+
+mv hass_frontend /usr/lib/python3.7/site-packages/hass_frontend
 python3 setup.py install
 cd ..
 rm -rf home-assistant-frontend-20201229.1.tar.gz home-assistant-frontend-20201229.1
@@ -270,6 +287,10 @@ mv \
 cd ..
 rm -rf components-orig
 cd components
+
+# serve static with gzipped files
+sed -i 's/filepath = self._directory.joinpath(filename).resolve()/try:\n                filepath = self._directory.joinpath(Path(rel_url + ".gz")).resolve()\n                if not filepath.exists():\n                    raise FileNotFoundError()\n            except Exception as e:\n                filepath = self._directory.joinpath(filename).resolve()/' http/static.py
+
 sed -i 's/sqlalchemy==1.3.20/sqlalchemy/' recorder/manifest.json
 sed -i 's/pillow==7.2.0/pillow/' image/manifest.json
 sed -i 's/, UnidentifiedImageError//' image/__init__.py
@@ -304,6 +325,7 @@ sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
 sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
 python3 setup.py install
 cd ../
+rm -rf homeassistant-2021.1.5/
 
 mkdir -p /etc/homeassistant
 ln -s /etc/homeassistant /root/.homeassistant
