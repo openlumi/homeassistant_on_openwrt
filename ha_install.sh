@@ -110,11 +110,26 @@ tornado==6.1
 tzlocal==2.1 
 APScheduler==3.6.3
 
+# ping
+icmplib==2.0
+
+# asuswrt
+aioasuswrt==1.3.1
+
+# workday
+holidays==0.10.4
+pymeeus==0.4.0
+
 # ssdp
 async-upnp-client==0.14.13
 
 # xiaomi_gateway3      
 paho-mqtt==1.5.0
+
+# version
+pyhaversion==3.4.2
+pytest-runner==5.3.0
+semantic-version==2.8.5
 
 # zha requirements
 pyserial==3.5
@@ -202,14 +217,16 @@ mv \
   __init__.py \
   alarm_control_panel \
   alert \
-  alexa \
+  alexa \       
+  asuswrt \
   api \
   auth \
   automation \
   binary_sensor \
   camera \
   climate \
-  cloud \
+  cloud \    
+  command_line \
   config \
   cover \
   default_config \
@@ -240,13 +257,16 @@ mv \
   lovelace \
   map \
   media_player \
-  met \
+  met \         
+  moon \    
+  min_max \
   mobile_app \
   notify \
   number \
   onboarding \
   persistent_notification \
-  person \
+  person \   
+  ping \
   recorder \    
   remote \
   scene \
@@ -259,10 +279,14 @@ mv \
   sun \
   switch \
   system_health \
-  system_log \
+  system_log \ 
+  shell_command \
   timer \  
   telegram \
-  telegram_bot \
+  telegram_bot \      
+  template \    
+  time_date \
+  tod \
   tts \
   updater \
   vacuum \
@@ -283,7 +307,10 @@ mv \
   brother \
   discovery \
   mqtt \      
-  upnp \
+  upnp \  
+  uptime \   
+  workday \
+  version \
   mpd \
   ../components
 cd ..
