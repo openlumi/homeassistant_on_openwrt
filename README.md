@@ -77,13 +77,23 @@ restarted.**
 ## Enabling other components and installing custom
 
 You may want to add more components to your HA installation.
-In this case you have to copy the directory with component to 
-`/usr/lib/python3.7/site-packages/homeassistant-2021.1.5-py3.7.egg/homeassistant/components/`
+In this case you have to download tar.gz from PyPI:
+https://pypi.org/project/homeassistant/2021.1.5/#files
+Then extract the content and copy the required components to 
+`/usr/lib/python3.7/site-packages/homeassistant-2021.1.5-py3.7.egg/homeassistant/components`
+If the component uses the frontend wizard, you may want to uncomment the
+corresponding line in 
+`/usr/lib/python3.7/site-packages/homeassistant-2021.1.5-py3.7.egg/homeassistant/generated/config_flows.py`
+also.
 
-or create `custom_components` directory in `/etc/homeassistant` and
+Or you can create `custom_components` directory in `/etc/homeassistant` and
 copy it there.
 
 Try to install requirements from `manifest.json` with `pip3` manually
 to check it installs and doesn't require pre-compiled C libraries.
 Otherwise, you have to cross-compile python3 dependencies and install
 them as `ipk` packages.
+
+If the dependency is already installed via opkg or via pip3 you may want
+to fix the strict dependency in `manifest.json` to a weaker one or remove 
+versions at all.
