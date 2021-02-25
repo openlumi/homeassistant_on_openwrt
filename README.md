@@ -69,6 +69,11 @@ https://github.com/openlumi/ZiGate/releases/download/snapshot-20201008/ZiGate_3.
 You could try another Zigate firmwares for JN5169 chip. The baud rate
 must be 115200 as it is hardcoded in zigpy-zigate.
 
+**NOTE: It may require restarting Home Assistant after adding a new 
+component via the UI to let it see newly installed requirements. 
+E.g. ZHA installs paho-mqtt and will not allow configuring it unless HA is 
+restarted.**
+
 ## Enabling other components and installing custom
 
 You may want to add more components to your HA installation.
