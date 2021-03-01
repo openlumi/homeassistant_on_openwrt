@@ -283,6 +283,8 @@ mv \
   discovery \
   mqtt \
   mpd \
+  telegram \
+  telegram_bot \
   ../components
 cd ..
 rm -rf components-orig
