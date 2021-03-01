@@ -95,9 +95,6 @@ voluptuous-serialize==2.4.0
 importlib-metadata
 snitun==0.20
 
-#ble
-python3-cryptodomex==3.9.7
-
 # homeassistant manifest requirements
 PyQRCode==1.2.1
 pyMetno==0.8.1
