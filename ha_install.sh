@@ -138,10 +138,10 @@ semantic-version==2.8.5
 jsonpath==0.82
 xmltodict==0.12.0
 httpx==0.16.1
-httpcore-0.12.3
-sniffio-1.2.0
-h11-0.12.0
-rfc3986-1.4.0
+httpcore==0.12.3
+sniffio==1.2.0
+h11==0.12.0
+rfc3986==1.4.0
 
 # samsungtv
 websocket-client==0.56.0
