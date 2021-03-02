@@ -41,7 +41,7 @@ Compilation process is widely described on the site of the OpenWrt project.
 Then, download the installer and run it.
 
 ```sh
-wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/main/ha_install.sh -O - | sh
+wget https://raw.githubusercontent.com/adisik/homeassistant_on_openwrt/main/ha_install.sh -O - | sh
 ```
 
 After script prints `Done.` you have Home Assistant installed. 

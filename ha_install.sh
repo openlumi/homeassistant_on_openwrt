@@ -235,7 +235,7 @@ gzip ./hass_frontend/static/translations/shopping_list/*
 
 find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 
-mv hass_frontend /usr/lib/python3.7/site-packages/hass_frontend
+mv - f hass_frontend /usr/lib/python3.7/site-packages/hass_frontend
 python3 setup.py install
 cd ..
 rm -rf home-assistant-frontend-20201229.1.tar.gz home-assistant-frontend-20201229.1
@@ -248,14 +248,14 @@ rm -rf homeassistant-2021.1.5.tar.gz
 cd homeassistant-2021.1.5/homeassistant/
 echo '' > requirements.txt
 
-mv components components-orig
+mv -f components components-orig
 mkdir components
 cd components-orig
-mv \
+mv -f \
   __init__.py \
   alarm_control_panel \
   alert \
-  alexa \       
+  alexa \
   asuswrt \
   api \
   auth \
@@ -272,7 +272,7 @@ mv \
   device_automation \
   device_tracker \
   fan \
-  frontend \        
+  frontend \
   generic \
   google_assistant \
   google_translate \
@@ -296,20 +296,20 @@ mv \
   lovelace \
   map \
   media_player \
-  met \         
-  moon \    
+  met \
+  moon \
   min_max \
   mobile_app \
   notify \
   number \
   onboarding \
-  persistent_notification \   
+  persistent_notification \
   panel_iframe \
-  person \   
+  person \
   ping \
-  recorder \    
-  remote \   
-  rest \      
+  recorder \
+  remote \
+  rest \
   samsungtv \
   scene \
   script \
@@ -323,11 +323,11 @@ mv \
   system_health \
   system_log \ 
   shell_command \
-  timer \   
+  timer \
   telnet \
   telegram \
-  telegram_bot \      
-  template \    
+  telegram_bot \
+  template \
   time_date \
   tod \
   tts \
@@ -349,9 +349,9 @@ mv \
   panel_custom \
   brother \
   discovery \
-  mqtt \      
-  upnp \  
-  uptime \   
+  mqtt \
+  upnp \
+  uptime \
   workday \
   version \
   mpd \
