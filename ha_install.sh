@@ -235,6 +235,7 @@ gzip ./hass_frontend/static/translations/shopping_list/*
 
 find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 
+rm -rf /usr/lib/python3.7/site-packages/hass_frontend
 mv -f hass_frontend /usr/lib/python3.7/site-packages/hass_frontend
 python3 setup.py install
 cd ..
