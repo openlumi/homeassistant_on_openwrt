@@ -215,6 +215,9 @@ rm -rf hass-nabucasa-0.39.0.tar.gz hass-nabucasa-0.39.0
 
 # tmp might be small for frontend
 cd /root
+rm -rf home-assistant-frontend-20201229.1.tar.gz
+rm -rf home-assistant-frontend-20201229.1
+
 wget https://files.pythonhosted.org/packages/8f/9b/aa394eb6265a8ed90af2b318d1a4c844e6a35de22f7a24e275161322cccc/home-assistant-frontend-20201229.1.tar.gz -O home-assistant-frontend-20201229.1.tar.gz
 tar -zxf home-assistant-frontend-20201229.1.tar.gz
 cd home-assistant-frontend-20201229.1
@@ -241,6 +244,9 @@ python3 setup.py install
 cd ..
 rm -rf home-assistant-frontend-20201229.1.tar.gz home-assistant-frontend-20201229.1
 cd /tmp
+
+rm -rf homeassistant-2021.1.5.tar.gz
+rm -rf homeassistant-2021.1.5
 
 echo "Install HASS"
 wget https://files.pythonhosted.org/packages/99/a0/dfb23c5fcf168825964cc367fd9d3ff62636b7f056077656e87880b1a356/homeassistant-2021.1.5.tar.gz -O - > /tmp/homeassistant-2021.1.5.tar.gz
