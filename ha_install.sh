@@ -270,7 +270,7 @@ mv -f \
   binary_sensor \
   camera \
   climate \
-  cloud \    
+  cloud \
   command_line \
   config \ 
   coronavirus \
