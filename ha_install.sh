@@ -272,7 +272,7 @@ mv -f \
   climate \
   cloud \
   command_line \
-  config \ 
+  config \
   coronavirus \
   cover \
   default_config \
