@@ -328,7 +328,7 @@ mv -f \
   sun \
   switch \
   system_health \
-  system_log \ 
+  system_log \
   shell_command \
   timer \
   telnet \
@@ -418,7 +418,7 @@ tts:
     language: ru
 
 recorder:
-  purge_keep_days: 2
+  purge_keep_days: 3
   db_url: 'sqlite:///:memory:'
 
 group: !include groups.yaml
