@@ -332,6 +332,8 @@ sed -i 's/    "/    # "/' homeassistant/generated/config_flows.py
 sed -i 's/    # "mqtt"/    "mqtt"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
 
+  sed -i 's/"installation_type": "Unknown"/"installation_type": "HomeAssistant on OpenWrt"/' homeassistant/helpers/system_info.py
+
 sed -i 's/REQUIRED_PYTHON_VER = \(3, [0-9], [0-9]\)/REQUIRED_PYTHON_VER = \(3, 7, 0\)/' homeassistant/const.py
 
 sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
