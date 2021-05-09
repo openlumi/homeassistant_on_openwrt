@@ -41,7 +41,7 @@ Compilation process is widely described on the site of the OpenWrt project.
 Then, download the installer and run it.
 
 ```sh
-wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/main/ha_install.sh -O - | sh
+wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/downgrade_python/ha_install.sh -O - | sh
 ```
 
 After script prints `Done.` you have Home Assistant installed. 
@@ -80,10 +80,10 @@ You may want to add more components to your HA installation.
 In this case you have to download tar.gz from PyPI:
 https://pypi.org/project/homeassistant/2021.1.5/#files
 Then extract the content and copy the required components to 
-`/usr/lib/python3.7/site-packages/homeassistant-2021.1.5-py3.7.egg/homeassistant/components`
+`/usr/lib/python3.7/site-packages/homeassistant-2021.5.1-py3.7.egg/homeassistant/components`
 If the component uses the frontend wizard, you may want to uncomment the
 corresponding line in 
-`/usr/lib/python3.7/site-packages/homeassistant-2021.1.5-py3.7.egg/homeassistant/generated/config_flows.py`
+`/usr/lib/python3.7/site-packages/homeassistant-2021.5.1-py3.7.egg/homeassistant/generated/config_flows.py`
 also.
 
 Or you can create `custom_components` directory in `/etc/homeassistant` and

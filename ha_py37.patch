@@ -1,0 +1,545 @@
+diff -ur a/homeassistant/components/alarm_control_panel/__init__.py b/homeassistant/components/alarm_control_panel/__init__.py
+--- a/homeassistant/components/alarm_control_panel/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/alarm_control_panel/__init__.py	2021-05-09 14:41:54.000000000 +0000
+@@ -2,7 +2,6 @@
+ from abc import abstractmethod
+ from datetime import timedelta
+ import logging
+-from typing import final
+
+ import voluptuous as vol
+
+@@ -173,7 +172,7 @@
+     def supported_features(self) -> int:
+         """Return the list of supported features."""
+
+-    @final
++    #@final
+     @property
+     def state_attributes(self):
+         """Return the state attributes."""
+diff -ur a/homeassistant/components/camera/__init__.py b/homeassistant/components/camera/__init__.py
+--- a/homeassistant/components/camera/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/camera/__init__.py	2021-05-09 14:42:36.000000000 +0000
+@@ -8,7 +8,7 @@
+ import logging
+ import os
+ from random import SystemRandom
+-from typing import final
++# from typing import final
+
+ from aiohttp import web
+ import async_timeout
+@@ -430,7 +430,7 @@
+         """Call the job and disable motion detection."""
+         await self.hass.async_add_executor_job(self.disable_motion_detection)
+
+-    @final
++    # @final
+     @property
+     def state_attributes(self):
+         """Return the camera state attributes."""
+diff -ur a/homeassistant/components/climate/__init__.py b/homeassistant/components/climate/__init__.py
+--- a/homeassistant/components/climate/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/climate/__init__.py	2021-05-09 14:41:37.000000000 +0000
+@@ -5,7 +5,7 @@
+ from datetime import timedelta
+ import functools as ft
+ import logging
+-from typing import Any, final
++from typing import Any
+
+ import voluptuous as vol
+
+@@ -214,7 +214,7 @@
+
+         return data
+
+-    @final
++    # @final
+     @property
+     def state_attributes(self) -> dict[str, Any]:
+         """Return the optional state attributes."""
+diff -ur a/homeassistant/components/cover/__init__.py b/homeassistant/components/cover/__init__.py
+--- a/homeassistant/components/cover/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/cover/__init__.py	2021-05-09 14:43:35.000000000 +0000
+@@ -2,7 +2,7 @@
+ from datetime import timedelta
+ import functools as ft
+ import logging
+-from typing import Any, final
++from typing import Any #, final
+
+ import voluptuous as vol
+
+@@ -196,7 +196,7 @@
+
+         return STATE_CLOSED if closed else STATE_OPEN
+
+-    @final
++    #@final
+     @property
+     def state_attributes(self):
+         """Return the state attributes."""
+diff -ur a/homeassistant/components/device_tracker/config_entry.py b/homeassistant/components/device_tracker/config_entry.py
+--- a/homeassistant/components/device_tracker/config_entry.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/device_tracker/config_entry.py	2021-05-09 14:43:11.000000000 +0000
+@@ -1,7 +1,7 @@
+ """Code to set up a device tracker platform using a config entry."""
+ from __future__ import annotations
+
+-from typing import final
++#from typing import final
+
+ from homeassistant.components import zone
+ from homeassistant.const import (
+@@ -116,7 +116,7 @@
+
+         return None
+
+-    @final
++    #@final
+     @property
+     def state_attributes(self):
+         """Return the device state attributes."""
+@@ -160,7 +160,7 @@
+         """Return true if the device is connected to the network."""
+         raise NotImplementedError
+
+-    @final
++    #@final
+     @property
+     def state_attributes(self):
+         """Return the device state attributes."""
+diff -ur a/homeassistant/components/device_tracker/legacy.py b/homeassistant/components/device_tracker/legacy.py
+--- a/homeassistant/components/device_tracker/legacy.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/device_tracker/legacy.py	2021-05-09 15:08:03.000000000 +0000
+@@ -6,7 +6,7 @@
+ from datetime import timedelta
+ import hashlib
+ from types import ModuleType
+-from typing import Any, Callable, final
++from typing import Any, Callable #, final
+
+ import attr
+ import voluptuous as vol
+@@ -669,7 +669,7 @@
+         """Return the picture of the device."""
+         return self.config_picture
+
+-    @final
++    # @final
+     @property
+     def state_attributes(self):
+         """Return the device state attributes."""
+diff -ur a/homeassistant/components/fan/__init__.py b/homeassistant/components/fan/__init__.py
+--- a/homeassistant/components/fan/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/fan/__init__.py	2021-05-09 14:44:35.000000000 +0000
+@@ -5,7 +5,7 @@
+ import functools as ft
+ import logging
+ import math
+-from typing import final
++#from typing import final
+
+ import voluptuous as vol
+
+@@ -586,7 +586,7 @@
+                 f"The speed_list {speed_list} does not contain any valid speeds."
+             ) from ex
+
+-    @final
++    # @final
+     @property
+     def state_attributes(self) -> dict:
+         """Return optional state attributes."""
+diff -ur a/homeassistant/components/hassio/__init__.py b/homeassistant/components/hassio/__init__.py
+--- a/homeassistant/components/hassio/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/hassio/__init__.py	2021-05-09 14:35:53.000000000 +0000
+@@ -342,7 +342,8 @@
+         if os.environ.get(env):
+             continue
+         _LOGGER.error("Missing %s environment variable", env)
+-        if config_entries := hass.config_entries.async_entries(DOMAIN):
++        config_entries = hass.config_entries.async_entries(DOMAIN)
++        if config_entries:
+             hass.async_create_task(
+                 hass.config_entries.async_remove(config_entries[0].entry_id)
+             )
+@@ -553,8 +554,8 @@
+             "name": addon[ATTR_NAME],
+             "entry_type": ATTR_SERVICE,
+         }
+-        if manufacturer := addon.get(ATTR_REPOSITORY) or addon.get(ATTR_URL):
+-            params["manufacturer"] = manufacturer
++        if addon.get(ATTR_REPOSITORY) or addon.get(ATTR_URL):
++            params["manufacturer"] = addon.get(ATTR_REPOSITORY)
+         dev_reg.async_get_or_create(**params)
+
+
+@@ -581,7 +582,8 @@
+ ) -> None:
+     """Remove addons from the device registry."""
+     for addon_slug in addons:
+-        if dev := dev_reg.async_get_device({(DOMAIN, addon_slug)}):
++        dev = dev_reg.async_get_device({(DOMAIN, addon_slug)})
++        if dev:
+             dev_reg.async_remove_device(dev.id)
+
+
+@@ -626,7 +628,8 @@
+             return new_data
+
+         # Remove add-ons that are no longer installed from device registry
+-        if removed_addons := list(set(self.data["addons"]) - set(new_data["addons"])):
++        removed_addons = list(set(self.data["addons"]) - set(new_data["addons"]))
++        if removed_addons:
+             async_remove_addons_from_dev_reg(self.dev_reg, removed_addons)
+
+         # If there are new add-ons, we should reload the config entry so we can
+diff -ur a/homeassistant/components/humidifier/__init__.py b/homeassistant/components/humidifier/__init__.py
+--- a/homeassistant/components/humidifier/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/humidifier/__init__.py	2021-05-09 14:42:08.000000000 +0000
+@@ -3,7 +3,7 @@
+
+ from datetime import timedelta
+ import logging
+-from typing import Any, final
++from typing import Any
+
+ import voluptuous as vol
+
+@@ -116,7 +116,7 @@
+
+         return data
+
+-    @final
++    #@final
+     @property
+     def state_attributes(self) -> dict[str, Any]:
+         """Return the optional state attributes."""
+diff -ur a/homeassistant/components/image_processing/__init__.py b/homeassistant/components/image_processing/__init__.py
+--- a/homeassistant/components/image_processing/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/image_processing/__init__.py	2021-05-09 14:43:45.000000000 +0000
+@@ -2,7 +2,7 @@
+ import asyncio
+ from datetime import timedelta
+ import logging
+-from typing import final
++# from typing import final
+
+ import voluptuous as vol
+
+@@ -176,7 +176,7 @@
+         """Return the class of this device, from component DEVICE_CLASSES."""
+         return "face"
+
+-    @final
++    # @final
+     @property
+     def state_attributes(self):
+         """Return device specific state attributes."""
+diff -ur a/homeassistant/components/light/__init__.py b/homeassistant/components/light/__init__.py
+--- a/homeassistant/components/light/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/light/__init__.py	2021-05-09 14:41:02.000000000 +0000
+@@ -7,7 +7,7 @@
+ from datetime import timedelta
+ import logging
+ import os
+-from typing import cast, final
++from typing import cast
+
+ import voluptuous as vol
+
+@@ -321,9 +321,11 @@
+         # Backwards compatibility: Fall back to hs color if light.supported_color_modes
+         # is not implemented
+         if not supported_color_modes:
+-            if (rgb_color := params.pop(ATTR_RGB_COLOR, None)) is not None:
++            rgb_color = params.pop(ATTR_RGB_COLOR, None)
++            xy_color = params.pop(ATTR_XY_COLOR, None)
++            if rgb_color is not None:
+                 params[ATTR_HS_COLOR] = color_util.color_RGB_to_hs(*rgb_color)
+-            elif (xy_color := params.pop(ATTR_XY_COLOR, None)) is not None:
++            elif xy_color is not None:
+                 params[ATTR_HS_COLOR] = color_util.color_xy_to_hs(*xy_color)
+         elif ATTR_HS_COLOR in params and COLOR_MODE_HS not in supported_color_modes:
+             hs_color = params.pop(ATTR_HS_COLOR)
+@@ -728,7 +730,7 @@
+             data[ATTR_XY_COLOR] = color_util.color_RGB_to_xy(*rgb_color)
+         return data
+
+-    @final
++    #@final
+     @property
+     def state_attributes(self):
+         """Return state attributes."""
+diff -ur a/homeassistant/components/light/reproduce_state.py b/homeassistant/components/light/reproduce_state.py
+--- a/homeassistant/components/light/reproduce_state.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/light/reproduce_state.py	2021-05-09 14:32:30.000000000 +0000
+@@ -144,7 +144,8 @@
+             # Remove deprecated white value if we got a valid color mode
+             service_data.pop(ATTR_WHITE_VALUE, None)
+             color_mode = state.attributes[ATTR_COLOR_MODE]
+-            if color_attr := COLOR_MODE_TO_ATTRIBUTE.get(color_mode):
++            if COLOR_MODE_TO_ATTRIBUTE.get(color_mode):
++                color_attr = COLOR_MODE_TO_ATTRIBUTE.get(color_mode)
+                 if color_attr not in state.attributes:
+                     _LOGGER.warning(
+                         "Color mode %s specified but attribute %s missing for: %s",
+diff -ur a/homeassistant/components/lock/__init__.py b/homeassistant/components/lock/__init__.py
+--- a/homeassistant/components/lock/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/lock/__init__.py	2021-05-09 14:44:23.000000000 +0000
+@@ -2,7 +2,7 @@
+ from datetime import timedelta
+ import functools as ft
+ import logging
+-from typing import final
++# from typing import final
+
+ import voluptuous as vol
+
+@@ -118,7 +118,7 @@
+         """Open the door latch."""
+         await self.hass.async_add_executor_job(ft.partial(self.open, **kwargs))
+
+-    @final
++    # @final
+     @property
+     def state_attributes(self):
+         """Return the state attributes."""
+diff -ur a/homeassistant/components/media_player/__init__.py b/homeassistant/components/media_player/__init__.py
+--- a/homeassistant/components/media_player/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/media_player/__init__.py	2021-05-09 14:44:12.000000000 +0000
+@@ -10,7 +10,7 @@
+ import hashlib
+ import logging
+ import secrets
+-from typing import final
++# from typing import final
+ from urllib.parse import urlparse
+
+ from aiohttp import web
+@@ -855,7 +855,7 @@
+
+         return data
+
+-    @final
++    # @final
+     @property
+     def state_attributes(self):
+         """Return the state attributes."""
+diff -ur a/homeassistant/components/recorder/__init__.py b/homeassistant/components/recorder/__init__.py
+--- a/homeassistant/components/recorder/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/recorder/__init__.py	2021-05-09 14:31:13.000000000 +0000
+@@ -520,7 +520,10 @@
+         # Use a session for the event read loop
+         # with a commit every time the event time
+         # has changed. This reduces the disk io.
+-        while event := self.queue.get():
++        while True:
++            event = self.queue.get()
++            if not event:
++                break
+             try:
+                 self._process_one_event_or_recover(event)
+             except Exception as err:  # pylint: disable=broad-except
+diff -ur a/homeassistant/components/recorder/util.py b/homeassistant/components/recorder/util.py
+--- a/homeassistant/components/recorder/util.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/recorder/util.py	2021-05-09 15:02:17.000000000 +0000
+@@ -49,7 +49,7 @@
+     need_rollback = False
+     try:
+         yield session
+-        if session.get_transaction():
++        if session.transaction:
+             need_rollback = True
+             session.commit()
+     except Exception as err:
+Only in a/homeassistant/components: safe_mode
+diff -ur a/homeassistant/components/switch/__init__.py b/homeassistant/components/switch/__init__.py
+--- a/homeassistant/components/switch/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/switch/__init__.py	2021-05-09 14:42:48.000000000 +0000
+@@ -1,7 +1,7 @@
+ """Component to interface with switches that can be controlled remotely."""
+ from datetime import timedelta
+ import logging
+-from typing import final
++#from typing import final
+
+ import voluptuous as vol
+
+@@ -97,7 +97,7 @@
+         """Return true if device is in standby."""
+         return None
+
+-    @final
++    #@final
+     @property
+     def state_attributes(self):
+         """Return the optional state attributes."""
+diff -ur a/homeassistant/components/vacuum/__init__.py b/homeassistant/components/vacuum/__init__.py
+--- a/homeassistant/components/vacuum/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/vacuum/__init__.py	2021-05-09 14:42:22.000000000 +0000
+@@ -2,7 +2,6 @@
+ from datetime import timedelta
+ from functools import partial
+ import logging
+-from typing import final
+
+ import voluptuous as vol
+
+@@ -272,7 +271,7 @@
+             battery_level=self.battery_level, charging=charging
+         )
+
+-    @final
++    # @final
+     @property
+     def state_attributes(self):
+         """Return the state attributes of the vacuum cleaner."""
+diff -ur a/homeassistant/components/weather/__init__.py b/homeassistant/components/weather/__init__.py
+--- a/homeassistant/components/weather/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/weather/__init__.py	2021-05-09 14:43:58.000000000 +0000
+@@ -1,7 +1,7 @@
+ """Weather component that handles meteorological data for your location."""
+ from datetime import timedelta
+ import logging
+-from typing import final
++#from typing import final
+
+ from homeassistant.const import PRECISION_TENTHS, PRECISION_WHOLE, TEMP_CELSIUS
+ from homeassistant.helpers.config_validation import (  # noqa: F401
+@@ -139,7 +139,7 @@
+             else PRECISION_WHOLE
+         )
+
+-    @final
++    #@final
+     @property
+     def state_attributes(self):
+         """Return the state attributes."""
+diff -ur a/homeassistant/components/zeroconf/__init__.py b/homeassistant/components/zeroconf/__init__.py
+--- a/homeassistant/components/zeroconf/__init__.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/components/zeroconf/__init__.py	2021-05-09 14:31:50.000000000 +0000
+@@ -9,7 +9,7 @@
+ from ipaddress import ip_address
+ import logging
+ import socket
+-from typing import Any, TypedDict, cast
++from typing import Any, Dict as TypedDict, cast
+
+ from pyroute2 import IPRoute
+ import voluptuous as vol
+@@ -141,7 +141,8 @@
+         )
+         return InterfaceChoice.All
+
+-    if not (first_ip := _first_ip_nexthop_from_route(routes)):
++    first_ip = _first_ip_nexthop_from_route(routes)
++    if not first_ip:
+         _LOGGER.debug(
+             "The system could not auto detect the nexthop for %s on your operating system; Zeroconf will broadcast on all interfaces",
+             MDNS_TARGET_IP,
+diff -ur a/homeassistant/const.py b/homeassistant/const.py
+--- a/homeassistant/const.py	2021-05-09 16:03:22.037597776 +0000
++++ b/homeassistant/const.py	2021-05-09 13:52:43.000000000 +0000
+@@ -4,7 +4,7 @@
+ PATCH_VERSION = "1"
+ __short_version__ = f"{MAJOR_VERSION}.{MINOR_VERSION}"
+ __version__ = f"{__short_version__}.{PATCH_VERSION}"
+-REQUIRED_PYTHON_VER = (3, 8, 0)
++REQUIRED_PYTHON_VER = (3, 7, 0)
+ # Truthy date string triggers showing related deprecation warning messages.
+ REQUIRED_NEXT_PYTHON_VER = (3, 9, 0)
+ REQUIRED_NEXT_PYTHON_DATE = ""
+diff -ur a/homeassistant/data_entry_flow.py b/homeassistant/data_entry_flow.py
+--- a/homeassistant/data_entry_flow.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/data_entry_flow.py	2021-05-09 14:00:21.000000000 +0000
+@@ -5,7 +5,7 @@
+ import asyncio
+ from collections.abc import Mapping
+ from types import MappingProxyType
+-from typing import Any, TypedDict
++from typing import Any, Dict as TypedDict
+ import uuid
+
+ import voluptuous as vol
+@@ -51,7 +51,7 @@
+         self.description_placeholders = description_placeholders
+
+
+-class FlowResult(TypedDict, total=False):
++class FlowResult(TypedDict):
+     """Typed result dict."""
+
+     version: int
+diff -ur a/homeassistant/helpers/discovery.py b/homeassistant/helpers/discovery.py
+--- a/homeassistant/helpers/discovery.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/helpers/discovery.py	2021-05-09 13:58:24.000000000 +0000
+@@ -7,7 +7,7 @@
+ """
+ from __future__ import annotations
+
+-from typing import Any, Callable, TypedDict
++from typing import Any, Callable, Dict as TypedDict
+
+ from homeassistant import core, setup
+ from homeassistant.core import CALLBACK_TYPE
+diff -ur a/homeassistant/helpers/script.py b/homeassistant/helpers/script.py
+--- a/homeassistant/helpers/script.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/helpers/script.py	2021-05-09 13:58:16.000000000 +0000
+@@ -9,7 +9,7 @@
+ import itertools
+ import logging
+ from types import MappingProxyType
+-from typing import Any, Callable, Dict, TypedDict, Union, cast
++from typing import Any, Callable, Dict, Dict as TypedDict, Union, cast
+
+ import async_timeout
+ import voluptuous as vol
+diff -ur a/homeassistant/helpers/service.py b/homeassistant/helpers/service.py
+--- a/homeassistant/helpers/service.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/helpers/service.py	2021-05-09 13:58:06.000000000 +0000
+@@ -6,7 +6,7 @@
+ import dataclasses
+ from functools import partial, wraps
+ import logging
+-from typing import TYPE_CHECKING, Any, Callable, TypedDict
++from typing import TYPE_CHECKING, Any, Callable, Dict as TypedDict
+
+ import voluptuous as vol
+
+diff -ur a/homeassistant/loader.py b/homeassistant/loader.py
+--- a/homeassistant/loader.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/loader.py	2021-05-09 13:59:48.000000000 +0000
+@@ -15,7 +15,7 @@
+ import pathlib
+ import sys
+ from types import ModuleType
+-from typing import TYPE_CHECKING, Any, Callable, Dict, TypedDict, TypeVar, cast
++from typing import TYPE_CHECKING, Any, Callable, Dict, Dict as TypedDict, TypeVar, cast
+
+ from awesomeversion import AwesomeVersion, AwesomeVersionStrategy
+
+@@ -64,7 +64,7 @@
+ MAX_LOAD_CONCURRENTLY = 4
+
+
+-class Manifest(TypedDict, total=False):
++class Manifest(TypedDict):
+     """
+     Integration manifest.
+
+diff -ur a/homeassistant/util/package.py b/homeassistant/util/package.py
+--- a/homeassistant/util/package.py	1970-01-01 00:00:00.000000000 +0000
++++ b/homeassistant/util/package.py	2021-05-09 14:24:33.000000000 +0000
+@@ -2,7 +2,7 @@
+ from __future__ import annotations
+
+ import asyncio
+-from importlib.metadata import PackageNotFoundError, version
++from importlib_metadata import PackageNotFoundError, version
+ import logging
+ import os
+ from pathlib import Path

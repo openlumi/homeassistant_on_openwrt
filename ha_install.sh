@@ -13,6 +13,7 @@ opkg install \
   python3-ciso8601
 
 opkg install \
+  patch \
   python3-aiohttp \
   python3-aiohttp-cors \
   python3-async-timeout \
@@ -82,7 +83,7 @@ pip3 install wheel
 cat << "EOF" > /tmp/requirements.txt
 acme==1.8.0
 appdirs==1.4.4
-astral==1.10.1
+astral==2.2
 atomicwrites==1.4.0
 attr==0.3.1
 distlib==0.3.1
@@ -90,14 +91,15 @@ filelock==3.0.12
 PyJWT==1.7.1
 python-slugify==4.0.1
 text-unidecode==1.3
-voluptuous==0.11.7
+voluptuous==0.12.1
 voluptuous-serialize==2.4.0
 importlib-metadata
 snitun==0.20
 
 # homeassistant manifest requirements
+async-upnp-client==0.16.2
 PyQRCode==1.2.1
-pyMetno==0.8.1
+pyMetno==0.8.3
 mutagen==1.45.1
 pyotp==2.3.0
 gTTS==2.2.1
@@ -147,7 +149,6 @@ echo "Installing python-miio..."
 tar -zxf python-miio-0.5.4.tar.gz
 cd python-miio-0.5.4
 sed -i 's/cryptography>=3,<4/cryptography>=2,<4/' setup.py
-find . -type f -exec touch {} +
 python3 setup.py install
 cd ..
 rm -rf python-miio-0.5.4 python-miio-0.5.4.tar.gz
@@ -165,9 +166,9 @@ rm -rf hass-nabucasa-0.39.0.tar.gz hass-nabucasa-0.39.0
 
 # tmp might be small for frontend
 cd /root
-wget https://files.pythonhosted.org/packages/8f/9b/aa394eb6265a8ed90af2b318d1a4c844e6a35de22f7a24e275161322cccc/home-assistant-frontend-20201229.1.tar.gz -O home-assistant-frontend-20201229.1.tar.gz
-tar -zxf home-assistant-frontend-20201229.1.tar.gz
-cd home-assistant-frontend-20201229.1
+wget https://files.pythonhosted.org/packages/5d/04/35f06c52b6d00dc104479d0fa7e425f790c5612bfc407cd2edf85d1ce4ae/home-assistant-frontend-20210504.0.tar.gz -O home-assistant-frontend-20210504.0.tar.gz
+tar -zxf home-assistant-frontend-20210504.0.tar.gz
+cd home-assistant-frontend-20210504.0
 find ./hass_frontend/frontend_es5 -name '*.js' -exec rm -rf {} \;
 find ./hass_frontend/frontend_es5 -name '*.map' -exec rm -rf {} \;
 find ./hass_frontend/frontend_es5 -name '*.txt' -exec rm -rf {} \;
@@ -180,7 +181,7 @@ find ./hass_frontend/static/polyfills -name '*.js' -maxdepth 1 -exec rm -rf {} \
 find ./hass_frontend/static/polyfills -name '*.map' -maxdepth 1 -exec rm -rf {} \;
 
 # shopping list and calendar missing gzipped
-gzip ./hass_frontend/static/translations/calendar/*
+#gzip ./hass_frontend/static/translations/calendar/*
 gzip ./hass_frontend/static/translations/shopping_list/*
 
 find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
@@ -188,14 +189,14 @@ find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 mv hass_frontend /usr/lib/python3.7/site-packages/hass_frontend
 python3 setup.py install
 cd ..
-rm -rf home-assistant-frontend-20201229.1.tar.gz home-assistant-frontend-20201229.1
+rm -rf home-assistant-frontend-20210504.0.tar.gz home-assistant-frontend-20210504.0
 cd /tmp
 
 echo "Install HASS"
-wget https://files.pythonhosted.org/packages/99/a0/dfb23c5fcf168825964cc367fd9d3ff62636b7f056077656e87880b1a356/homeassistant-2021.1.5.tar.gz -O - > /tmp/homeassistant-2021.1.5.tar.gz
-tar -zxf homeassistant-2021.1.5.tar.gz
-rm -rf homeassistant-2021.1.5.tar.gz
-cd homeassistant-2021.1.5/homeassistant/
+wget https://files.pythonhosted.org/packages/40/bd/8e55cacc78782b44474ba7c5510fb9dac63adad75e7fd97cd13254f50bf8/homeassistant-2021.5.1.tar.gz -O /tmp/homeassistant-2021.5.1.tar.gz
+tar -zxf homeassistant-2021.5.1.tar.gz
+rm -rf homeassistant-2021.5.1.tar.gz
+cd homeassistant-2021.5.1/homeassistant/
 echo '' > requirements.txt
 
 mv components components-orig
@@ -261,6 +262,7 @@ mv \
   switch \
   system_health \
   system_log \
+  template \
   timer \
   tts \
   updater \
@@ -285,6 +287,11 @@ mv \
   mpd \
   telegram \
   telegram_bot \
+  trace \
+  analytics \
+  my \
+  safe_mode \
+  upnp \
   ../components
 cd ..
 rm -rf components-orig
@@ -293,21 +300,21 @@ cd components
 # serve static with gzipped files
 sed -i 's/filepath = self._directory.joinpath(filename).resolve()/try:\n                filepath = self._directory.joinpath(Path(rel_url + ".gz")).resolve()\n                if not filepath.exists():\n                    raise FileNotFoundError()\n            except Exception as e:\n                filepath = self._directory.joinpath(filename).resolve()/' http/static.py
 
-sed -i 's/sqlalchemy==1.3.20/sqlalchemy/' recorder/manifest.json
-sed -i 's/pillow==7.2.0/pillow/' image/manifest.json
+sed -i 's/sqlalchemy==[0-9\.]*/sqlalchemy/' recorder/manifest.json
+sed -i 's/pillow==[0-9\.]*/pillow/' image/manifest.json
 sed -i 's/, UnidentifiedImageError//' image/__init__.py
 sed -i 's/except UnidentifiedImageError/except OSError/' image/__init__.py
-sed -i 's/zeroconf==0.28.8/zeroconf/' zeroconf/manifest.json
-sed -i 's/netdisco==2.8.2/netdisco/' discovery/manifest.json
-sed -i 's/PyNaCl==1.3.0/PyNaCl/' mobile_app/manifest.json
-sed -i 's/"defusedxml==0.6.0", "netdisco==2.8.2"/"defusedxml", "netdisco"/' ssdp/manifest.json
+sed -i 's/zeroconf==[0-9\.]*/zeroconf/' zeroconf/manifest.json
+sed -i 's/netdisco==[0-9\.]*/netdisco/' discovery/manifest.json
+sed -i 's/PyNaCl==[0-9\.]*/PyNaCl/' mobile_app/manifest.json
+sed -i 's/"defusedxml==[0-9\.]*", "netdisco==[0-9\.]*"/"defusedxml", "netdisco"/' ssdp/manifest.json
 # remove unwanted zha requirements
-sed -i 's/"bellows==0.21.0",//' zha/manifest.json
-sed -i 's/"zigpy-cc==0.5.2",//' zha/manifest.json
-sed -i 's/"zigpy-deconz==0.11.1",//' zha/manifest.json
-sed -i 's/"zigpy-xbee==0.13.0",//' zha/manifest.json
-sed -i 's/"zigpy-znp==0.3.0"//' zha/manifest.json
-sed -i 's/"zigpy-zigate==0.7.3",/"zigpy-zigate"/' zha/manifest.json
+sed -i 's/"bellows==[0-9\.]*",//' zha/manifest.json
+sed -i 's/"zigpy-cc==[0-9\.]*",//' zha/manifest.json
+sed -i 's/"zigpy-deconz==[0-9\.]*",//' zha/manifest.json
+sed -i 's/"zigpy-xbee==[0-9\.]*",//' zha/manifest.json
+sed -i 's/"zigpy-znp==[0-9\.]*"//' zha/manifest.json
+sed -i 's/"zigpy-zigate==[0-9\.]*",/"zigpy-zigate"/' zha/manifest.json
 sed -i 's/import bellows.zigbee.application//' zha/core/const.py
 sed -i 's/import zigpy_cc.zigbee.application//' zha/core/const.py
 sed -i 's/import zigpy_deconz.zigbee.application//' zha/core/const.py
@@ -316,6 +323,7 @@ sed -i 's/import zigpy_znp.zigbee.application//' zha/core/const.py
 sed -i -e '/znp = (/,/)/d' -e '/ezsp = (/,/)/d' -e '/deconz = (/,/)/d' -e '/ti_cc = (/,/)/d' -e '/xbee = (/,/)/d' zha/core/const.py
 
 sed -i 's/"cloud",//' default_config/manifest.json
+sed -i 's/"dhcp",//' default_config/manifest.json
 sed -i 's/"mobile_app",//' default_config/manifest.json
 sed -i 's/"updater",//' default_config/manifest.json
 
@@ -324,7 +332,16 @@ sed -i 's/    "/    # "/' homeassistant/generated/config_flows.py
 sed -i 's/    # "mqtt"/    "mqtt"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
 
+sed -i 's/REQUIRED_PYTHON_VER = \(3, [0-9], [0-9]\)/REQUIRED_PYTHON_VER = \(3, 7, 0\)/' homeassistant/const.py
+
 sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
+find . -type f -exec touch {} +
+
+# downgrade using python 3.8 to be compatible with 3.7
+wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/downgrade_python/ha_py37.patch -O /tmp/ha_py37.patch
+patch -p1 < /tmp/ha_py37.patch
+rm -rf /tmp/ha_py37.patch
+
 python3 setup.py install
 cd ../
 rm -rf homeassistant-2021.1.5/
