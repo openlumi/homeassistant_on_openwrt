@@ -190,9 +190,9 @@ mv hass_frontend /usr/lib/python3.7/site-packages/hass_frontend
 python3 setup.py install
 cd ..
 rm -rf home-assistant-frontend-20210504.0.tar.gz home-assistant-frontend-20210504.0
-cd /tmp
 
 echo "Install HASS"
+cd /tmp
 wget https://files.pythonhosted.org/packages/40/bd/8e55cacc78782b44474ba7c5510fb9dac63adad75e7fd97cd13254f50bf8/homeassistant-2021.5.1.tar.gz -O /tmp/homeassistant-2021.5.1.tar.gz
 tar -zxf homeassistant-2021.5.1.tar.gz
 rm -rf homeassistant-2021.5.1.tar.gz
