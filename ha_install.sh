@@ -149,6 +149,7 @@ echo "Installing python-miio..."
 tar -zxf python-miio-0.5.4.tar.gz
 cd python-miio-0.5.4
 sed -i 's/cryptography>=3,<4/cryptography>=2,<4/' setup.py
+find . -type f -exec touch {} +
 python3 setup.py install
 cd ..
 rm -rf python-miio-0.5.4 python-miio-0.5.4.tar.gz
