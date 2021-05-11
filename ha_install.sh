@@ -337,13 +337,13 @@ sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
 sed -i 's/REQUIRED_PYTHON_VER = \(3, [0-9], [0-9]\)/REQUIRED_PYTHON_VER = \(3, 7, 0\)/' homeassistant/const.py
 
 sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
-find . -type f -exec touch {} +
 
 # downgrade using python 3.8 to be compatible with 3.7
 wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/downgrade_python/ha_py37.patch -O /tmp/ha_py37.patch
 patch -p1 < /tmp/ha_py37.patch
 rm -rf /tmp/ha_py37.patch
 
+find . -type f -exec touch {} +
 python3 setup.py install
 cd ../
 rm -rf homeassistant-2021.1.5/
