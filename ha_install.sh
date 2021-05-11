@@ -86,6 +86,7 @@ appdirs==1.4.4
 astral==2.2
 atomicwrites==1.4.0
 attr==0.3.1
+awesomeversion==21.2.3
 distlib==0.3.1
 filelock==3.0.12
 PyJWT==1.7.1
