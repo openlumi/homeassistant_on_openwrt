@@ -104,6 +104,7 @@ pyMetno==0.8.3
 mutagen==1.45.1
 pyotp==2.3.0
 gTTS==2.2.1
+pyroute2==0.5.18
 
 # zha requirements
 pyserial==3.5
