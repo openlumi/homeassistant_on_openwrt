@@ -3,6 +3,9 @@
 
 set -e
 
+HOMEASSISTANT_VERSION="2021.5.1"
+HOMEASSISTANT_FRONTEND_VERSION="20210504.0"
+
 echo "Install base requirements from feed..."
 opkg update
 
@@ -115,24 +118,24 @@ EOF
 
 pip3 install -r /tmp/requirements.txt
 
-# show internal serial ports for Xiaomi
+# show internal serial ports for Xiaomi Gateway
 sed -i 's/ttyXRUSB\*/ttymxc[1-9]/' /usr/lib/python3.7/site-packages/serial/tools/list_ports_linux.py
 sed -i 's/if info.subsystem != "platform"]/]/' /usr/lib/python3.7/site-packages/serial/tools/list_ports_linux.py
 
 # fix deps
-sed -i 's/urllib3<1.25,>=1.20/urllib3<1.26,>=1.20/' /usr/lib/python3.7/site-packages/botocore-1.12.66-py3.7.egg-info/requires.txt
-sed -i 's/botocore<1.13.0,>=1.12.135/botocore<1.13.0,>=1.12.66/' /usr/lib/python3.7/site-packages/boto3-1.9.135-py3.7.egg-info/requires.txt
+sed -i 's/urllib3<1.25,>=1.20/urllib3>=1.20/' /usr/lib/python3.7/site-packages/botocore-1.12.66-py3.7.egg-info/requires.txt
+sed -i 's/botocore<1.13.0,>=1.12.135/botocore<1.13.0,>=1.12.0/' /usr/lib/python3.7/site-packages/boto3-1.9.135-py3.7.egg-info/requires.txt
 
 echo "Download files"
 
 wget https://github.com/pvizeli/pycognito/archive/0.1.4.tar.gz -O - > pycognito-0.1.4.tgz
 wget https://github.com/ctalkington/python-ipp/archive/0.11.0.tar.gz -O - > python-ipp-0.11.0.tgz
-wget https://files.pythonhosted.org/packages/b8/ad/31d10dbad025a8411029c5041129de14f9bb9f66a990de21be0011e19041/python-miio-0.5.4.tar.gz -O - > python-miio-0.5.4.tar.gz
+wget https://pypi.python.org/packages/source/p/python-miio/python-miio-0.5.4.tar.gz -O - > python-miio-0.5.4.tar.gz
 echo "Installing pycognito..."
 
 tar -zxf pycognito-0.1.4.tgz
 cd pycognito-0.1.4
-sed -i 's/boto3>=1.10.49/boto3>=1.9.135/' setup.py
+sed -i 's/boto3>=1.10.49/boto3/' setup.py
 python3 setup.py install
 cd ..
 rm -rf pycognito-0.1.4 pycognito-0.1.4.tgz
@@ -140,8 +143,8 @@ rm -rf pycognito-0.1.4 pycognito-0.1.4.tgz
 echo "Installing python-ipp..."
 tar -zxf python-ipp-0.11.0.tgz
 cd python-ipp-0.11.0
-sed -i 's/aiohttp>=3.6.2/aiohttp>=3.5.4/' requirements.txt
-sed -i 's/yarl>=1.4.2/yarl>=1.3.0/' requirements.txt
+sed -i 's/aiohttp>=3.6.2/aiohttp/' requirements.txt
+sed -i 's/yarl>=1.4.2/yarl/' requirements.txt
 python3 setup.py install
 cd ..
 rm -rf python-ipp-0.11.0 python-ipp-0.11.0.tgz
@@ -169,9 +172,9 @@ rm -rf hass-nabucasa-0.39.0.tar.gz hass-nabucasa-0.39.0
 
 # tmp might be small for frontend
 cd /root
-wget https://files.pythonhosted.org/packages/5d/04/35f06c52b6d00dc104479d0fa7e425f790c5612bfc407cd2edf85d1ce4ae/home-assistant-frontend-20210504.0.tar.gz -O home-assistant-frontend-20210504.0.tar.gz
-tar -zxf home-assistant-frontend-20210504.0.tar.gz
-cd home-assistant-frontend-20210504.0
+wget https://pypi.python.org/packages/source/h/home-assistant-frontend/home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}.tar.gz -O home-assistant-frontend.tar.gz
+tar -zxf home-assistant-frontend.tar.gz
+cd home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
 find ./hass_frontend/frontend_es5 -name '*.js' -exec rm -rf {} \;
 find ./hass_frontend/frontend_es5 -name '*.map' -exec rm -rf {} \;
 find ./hass_frontend/frontend_es5 -name '*.txt' -exec rm -rf {} \;
@@ -192,14 +195,14 @@ find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 mv hass_frontend /usr/lib/python3.7/site-packages/hass_frontend
 python3 setup.py install
 cd ..
-rm -rf home-assistant-frontend-20210504.0.tar.gz home-assistant-frontend-20210504.0
+rm -rf home-assistant-frontend.tar.gz home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
 
 echo "Install HASS"
 cd /tmp
-wget https://files.pythonhosted.org/packages/40/bd/8e55cacc78782b44474ba7c5510fb9dac63adad75e7fd97cd13254f50bf8/homeassistant-2021.5.1.tar.gz -O /tmp/homeassistant-2021.5.1.tar.gz
-tar -zxf homeassistant-2021.5.1.tar.gz
-rm -rf homeassistant-2021.5.1.tar.gz
-cd homeassistant-2021.5.1/homeassistant/
+wget https://pypi.python.org/packages/source/h/homeassistant/homeassistant-${HOMEASSISTANT_VERSION}.tar.gz -O homeassistant.tar.gz
+tar -zxf homeassistant.tar.gz
+rm -rf homeassistant.tar.gz
+cd homeassistant-${HOMEASSISTANT_VERSION}/homeassistant/
 echo '' > requirements.txt
 
 mv components components-orig
@@ -349,7 +352,7 @@ rm -rf /tmp/ha_py37.patch
 find . -type f -exec touch {} +
 python3 setup.py install
 cd ../
-rm -rf homeassistant-2021.1.5/
+rm -rf homeassistant-${HOMEASSISTANT_VERSION}/
 
 mkdir -p /etc/homeassistant
 ln -s /etc/homeassistant /root/.homeassistant
