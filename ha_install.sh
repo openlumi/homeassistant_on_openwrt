@@ -3,7 +3,12 @@
 
 set -e
 
-HOMEASSISTANT_VERSION="2021.5.1"
+OPENWRT_VERSION=${OPENWRT_VERSION:-21.02}
+PYTHON_VERSION="3.9"
+if [ "${OPENWRT_VERSION}" == "19.07" ]; then
+  PYTHON_VERSION="3.7"
+fi
+HOMEASSISTANT_VERSION="2021.5.5"
 HOMEASSISTANT_FRONTEND_VERSION="20210504.0"
 
 echo "Install base requirements from feed..."
@@ -76,29 +81,34 @@ opkg install \
   python3-netdisco \
   python3-zeroconf \
   python3-pillow \
-  python3-cryptodomex
+  python3-cryptodomex \
+  python3-slugify
 
 cd /tmp/
 
+# add missing _distutils_hack from setuptools
+mkdir -p /usr/lib/python${PYTHON_VERSION}/site-packages/_distutils_hack
+wget https://raw.githubusercontent.com/pypa/setuptools/v56.0.0/_distutils_hack/__init__.py -O /usr/lib/python${PYTHON_VERSION}/site-packages/_distutils_hack/__init__.py
+wget https://raw.githubusercontent.com/pypa/setuptools/v56.0.0/_distutils_hack/override.py -O /usr/lib/python${PYTHON_VERSION}/site-packages/_distutils_hack/override.py
 
 echo "Install base requirements from PyPI..."
 pip3 install wheel
 cat << "EOF" > /tmp/requirements.txt
-acme==1.8.0
-appdirs==1.4.4
+#acme==1.8.0
+#appdirs==1.4.4
 astral==2.2
 atomicwrites==1.4.0
-attr==0.3.1
+#attr==0.3.1
 awesomeversion==21.2.3
-distlib==0.3.1
-filelock==3.0.12
+#distlib==0.3.1
+#filelock==3.0.12
 PyJWT==1.7.1
-python-slugify==4.0.1
-text-unidecode==1.3
+#python-slugify==4.0.1
+#text-unidecode==1.3
 voluptuous==0.12.1
 voluptuous-serialize==2.4.0
-importlib-metadata
-snitun==0.20
+#importlib-metadata  # python3.7 wrapper
+snitun==0.21  # nabucasa dep
 
 # homeassistant manifest requirements
 async-upnp-client==0.16.2
@@ -106,36 +116,37 @@ PyQRCode==1.2.1
 pyMetno==0.8.3
 mutagen==1.45.1
 pyotp==2.3.0
-gTTS==2.2.1
+gTTS==2.2.2
 pyroute2==0.5.18
+aioesphomeapi==2.6.6
 
 # zha requirements
 pyserial==3.5
-zha-quirks==0.0.51
-zigpy==0.30.0
-zigpy-zigate==0.7.3
+zha-quirks==0.0.57
+zigpy==0.33.0
+https://github.com/zigpy/zigpy-zigate/archive/8772221faa7dfbcd31a3bba6e548c356af9faa0c.zip  # include raw mode support
 EOF
 
 pip3 install -r /tmp/requirements.txt
 
 # show internal serial ports for Xiaomi Gateway
-sed -i 's/ttyXRUSB\*/ttymxc[1-9]/' /usr/lib/python3.7/site-packages/serial/tools/list_ports_linux.py
-sed -i 's/if info.subsystem != "platform"]/]/' /usr/lib/python3.7/site-packages/serial/tools/list_ports_linux.py
+sed -i 's/ttyXRUSB\*/ttymxc[1-9]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
+sed -i 's/if info.subsystem != "platform"]/]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
 
 # fix deps
-sed -i 's/urllib3<1.25,>=1.20/urllib3>=1.20/' /usr/lib/python3.7/site-packages/botocore-1.12.66-py3.7.egg-info/requires.txt
-sed -i 's/botocore<1.13.0,>=1.12.135/botocore<1.13.0,>=1.12.0/' /usr/lib/python3.7/site-packages/boto3-1.9.135-py3.7.egg-info/requires.txt
+sed -i 's/urllib3<1.25,>=1.20/urllib3>=1.20/' /usr/lib/python${PYTHON_VERSION}/site-packages/botocore-*.egg-info/requires.txt
+sed -i 's/botocore<1.13.0,>=1.12.135/botocore<1.13.0,>=1.12.0/' /usr/lib/python${PYTHON_VERSION}/site-packages/boto3-*.egg-info/requires.txt
 
 echo "Download files"
 
 wget https://github.com/pvizeli/pycognito/archive/0.1.4.tar.gz -O - > pycognito-0.1.4.tgz
 wget https://github.com/ctalkington/python-ipp/archive/0.11.0.tar.gz -O - > python-ipp-0.11.0.tgz
-wget https://pypi.python.org/packages/source/p/python-miio/python-miio-0.5.4.tar.gz -O - > python-miio-0.5.4.tar.gz
+wget https://pypi.python.org/packages/source/p/python-miio/python-miio-0.5.6.tar.gz -O - > python-miio-0.5.6.tar.gz
 echo "Installing pycognito..."
 
 tar -zxf pycognito-0.1.4.tgz
 cd pycognito-0.1.4
-sed -i 's/boto3>=1.10.49/boto3/' setup.py
+sed -i 's/boto3>=[0-9\.]*/boto3/' setup.py
 python3 setup.py install
 cd ..
 rm -rf pycognito-0.1.4 pycognito-0.1.4.tgz
@@ -143,32 +154,32 @@ rm -rf pycognito-0.1.4 pycognito-0.1.4.tgz
 echo "Installing python-ipp..."
 tar -zxf python-ipp-0.11.0.tgz
 cd python-ipp-0.11.0
-sed -i 's/aiohttp>=3.6.2/aiohttp/' requirements.txt
-sed -i 's/yarl>=1.4.2/yarl/' requirements.txt
+sed -i 's/aiohttp>=[0-9\.]*/aiohttp/' requirements.txt
+sed -i 's/yarl>=[0-9\.]*/yarl/' requirements.txt
 python3 setup.py install
 cd ..
 rm -rf python-ipp-0.11.0 python-ipp-0.11.0.tgz
 
 
 echo "Installing python-miio..."
-tar -zxf python-miio-0.5.4.tar.gz
-cd python-miio-0.5.4
+tar -zxf python-miio-0.5.6.tar.gz
+cd python-miio-0.5.6
 sed -i 's/cryptography>=3,<4/cryptography>=2,<4/' setup.py
 find . -type f -exec touch {} +
 python3 setup.py install
 cd ..
-rm -rf python-miio-0.5.4 python-miio-0.5.4.tar.gz
+rm -rf python-miio-0.5.6 python-miio-0.5.6.tar.gz
 pip3 install PyXiaomiGateway==0.13.4
 
 echo "Install hass_nabucasa and ha-frontend..."
-wget https://github.com/NabuCasa/hass-nabucasa/archive/0.39.0.tar.gz -O - > hass-nabucasa-0.39.0.tar.gz
-tar -zxf hass-nabucasa-0.39.0.tar.gz
-cd hass-nabucasa-0.39.0
+wget https://github.com/NabuCasa/hass-nabucasa/archive/0.43.0.tar.gz -O - > hass-nabucasa-0.43.0.tar.gz
+tar -zxf hass-nabucasa-0.43.0.tar.gz
+cd hass-nabucasa-0.43.0
 sed -i 's/==.*"/"/' setup.py
 sed -i 's/>=.*"/"/' setup.py
 python3 setup.py install
 cd ..
-rm -rf hass-nabucasa-0.39.0.tar.gz hass-nabucasa-0.39.0
+rm -rf hass-nabucasa-0.43.0.tar.gz hass-nabucasa-0.43.0
 
 # tmp might be small for frontend
 cd /root
@@ -192,7 +203,7 @@ gzip ./hass_frontend/static/translations/shopping_list/*
 
 find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 
-mv hass_frontend /usr/lib/python3.7/site-packages/hass_frontend
+mv hass_frontend /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
 python3 setup.py install
 cd ..
 rm -rf home-assistant-frontend.tar.gz home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
@@ -225,6 +236,7 @@ mv \
   default_config \
   device_automation \
   device_tracker \
+  esphome \
   fan \
   frontend \
   google_assistant \
@@ -337,17 +349,20 @@ cd ../..
 sed -i 's/    "/    # "/' homeassistant/generated/config_flows.py
 sed -i 's/    # "mqtt"/    "mqtt"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
+sed -i 's/    # "esphome"/    "esphome"/' homeassistant/generated/config_flows.py
 
-  sed -i 's/"installation_type": "Unknown"/"installation_type": "HomeAssistant on OpenWrt"/' homeassistant/helpers/system_info.py
-
-sed -i 's/REQUIRED_PYTHON_VER = \(3, [0-9], [0-9]\)/REQUIRED_PYTHON_VER = \(3, 7, 0\)/' homeassistant/const.py
-
+sed -i 's/"installation_type": "Unknown"/"installation_type": "Home Assistant on OpenWrt"/' homeassistant/helpers/system_info.py
 sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
 
-# downgrade using python 3.8 to be compatible with 3.7
-wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/downgrade_python/ha_py37.patch -O /tmp/ha_py37.patch
-patch -p1 < /tmp/ha_py37.patch
-rm -rf /tmp/ha_py37.patch
+if [ "${OPENWRT_VERSION}" == "19.07" ]; then
+  # downgrade using python 3.8 to be compatible with 3.7
+  sed -i 's/REQUIRED_PYTHON_VER = \(3, [0-9], [0-9]\)/REQUIRED_PYTHON_VER = \(3, 7, 0\)/' homeassistant/const.py
+  wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/downgrade_python/ha_py37.patch -O /tmp/ha_py37.patch
+  patch -p1 < /tmp/ha_py37.patch
+  rm -rf /tmp/ha_py37.patch
+else
+  sed -i 's/session.get_transaction()/session.transaction/' homeassistant/components/recorder/util.py
+fi
 
 find . -type f -exec touch {} +
 python3 setup.py install

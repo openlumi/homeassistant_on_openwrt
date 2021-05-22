@@ -1,8 +1,8 @@
 # Homeassistant on OpenWrt
 
-This repo provides tools to install the latest version of Home Assistant that supports python 3.7 (2021.1.5)
-on a system with OpenWrt 19.07 installed. It provides the reduced version of HA with only minimal list of components 
-included. Additionally, it keeps MQTT and ZHA components as they are 
+This repo provides tools to install the latest version of Home Assistant. (2021.5.5)
+on a system with OpenWrt 21.02-rc1 installed. It provides the reduced version of HA with only minimal list of components 
+included. Additionally, it keeps MQTT, ESPHome, and ZHA components as they are 
 widely used with smart home solutions.
 
 It is distributed with a shell script that downloads and installs everything that required for a clean start.
@@ -10,24 +10,12 @@ It is distributed with a shell script that downloads and installs everything tha
 ### Requirements:
 - 120 MB storage space (256 recommended)
 - 128 MB RAM
-- OpenWrt 19.07 installed
+- OpenWrt 21.02-rc1 or newer installed
 
 
 ## Xiaomi Gateway installation
 
-Add the openlumi feed to gain access to a few precompiled python requirements.
-Skip this step if you have already added this feed.
-
-```sh
-(! grep -q openlumi /etc/opkg/customfeeds.conf) && (
-wget -q https://openlumi.github.io/openwrt-packages/public.key -O /tmp/public.key && 
-opkg-key add /tmp/public.key && rm /tmp/public.key &&
-echo 'src/gz openlumi https://openlumi.github.io/openwrt-packages/packages/19.07/arm_cortex-a9_neon' >> /etc/opkg/customfeeds.conf &&
-echo "Feed added successfully!"
-) || echo "Feed added already. Skip."
-```
-
-Then go to generic installation
+No extra steps required for OpenWrt 21.02
 
 ## Other devices
 
@@ -41,7 +29,7 @@ Compilation process is widely described on the site of the OpenWrt project.
 Then, download the installer and run it.
 
 ```sh
-wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/downgrade_python/ha_install.sh -O - | sh
+wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/21.02/ha_install.sh -O - | sh
 ```
 
 After script prints `Done.` you have Home Assistant installed. 
@@ -78,12 +66,12 @@ restarted.**
 
 You may want to add more components to your HA installation.
 In this case you have to download tar.gz from PyPI:
-https://pypi.org/project/homeassistant/2021.1.5/#files
+https://pypi.org/project/homeassistant/2021.5.5/#files
 Then extract the content and copy the required components to 
-`/usr/lib/python3.7/site-packages/homeassistant-2021.5.1-py3.7.egg/homeassistant/components`
+`/usr/lib/python3.9/site-packages/homeassistant-2021.5.5-py3.9.egg/homeassistant/components`
 If the component uses the frontend wizard, you may want to uncomment the
 corresponding line in 
-`/usr/lib/python3.7/site-packages/homeassistant-2021.5.1-py3.7.egg/homeassistant/generated/config_flows.py`
+`/usr/lib/python3.9/site-packages/homeassistant-2021.5.5-py3.9.egg/homeassistant/generated/config_flows.py`
 also.
 
 Or you can create `custom_components` directory in `/etc/homeassistant` and
