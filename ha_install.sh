@@ -125,6 +125,9 @@ pyserial==3.5
 zha-quirks==0.0.57
 zigpy==0.33.0
 https://github.com/zigpy/zigpy-zigate/archive/8772221faa7dfbcd31a3bba6e548c356af9faa0c.zip  # include raw mode support
+
+# fixed dependencies
+python-jose[cryptography]==3.2.0  # 3.3.0 is not compatible with the python3-cryptography in the feed
 EOF
 
 pip3 install -r /tmp/requirements.txt
