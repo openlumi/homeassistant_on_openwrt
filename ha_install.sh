@@ -107,6 +107,9 @@ pyserial==3.5
 zha-quirks==0.0.51
 zigpy==0.30.0
 zigpy-zigate==0.7.3
+
+# fixed dependencies
+python-jose[cryptography]==3.2.0  # 3.3.0 is not compatible with the python3-cryptography in the feed
 EOF
 
 pip3 install -r /tmp/requirements.txt
