@@ -99,7 +99,7 @@ cat << "EOF" > /tmp/requirements.txt
 astral==2.2
 atomicwrites==1.4.0
 #attr==0.3.1
-awesomeversion==21.2.3
+awesomeversion==21.4.0
 #distlib==0.3.1
 #filelock==3.0.12
 PyJWT==1.7.1
@@ -109,9 +109,10 @@ voluptuous==0.12.1
 voluptuous-serialize==2.4.0
 #importlib-metadata  # python3.7 wrapper
 snitun==0.21  # nabucasa dep
+tzdata-2021.1  # 2021.6 requirement
 
 # homeassistant manifest requirements
-async-upnp-client==0.16.2
+async-upnp-client==0.18.0
 PyQRCode==1.2.1
 pyMetno==0.8.3
 mutagen==1.45.1
@@ -119,6 +120,7 @@ pyotp==2.3.0
 gTTS==2.2.2
 pyroute2==0.5.18
 aioesphomeapi==2.6.6
+zeroconf==0.31.0  # override 0.29 from opkg to support .asyncio submodule
 
 # zha requirements
 pyserial==3.5
@@ -131,6 +133,7 @@ python-jose[cryptography]==3.2.0  # (pycognito) 3.3.0 is not compatible with the
 EOF
 
 pip3 install -r /tmp/requirements.txt
+rm -rf /etc/homeassistant/deps/lib/python3.9/site-packages/zeroconf*
 
 # show internal serial ports for Xiaomi Gateway
 sed -i 's/ttyXRUSB\*/ttymxc[1-9]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
@@ -168,6 +171,7 @@ echo "Installing python-miio..."
 tar -zxf python-miio-0.5.6.tar.gz
 cd python-miio-0.5.6
 sed -i 's/cryptography>=3,<4/cryptography>=2,<4/' setup.py
+sed -i 's/click>=7,<8/click/' setup.py
 find . -type f -exec touch {} +
 python3 setup.py install
 cd ..
@@ -270,12 +274,14 @@ mv \
   media_player \
   met \
   mobile_app \
+  network \
   notify \
   number \
   onboarding \
   persistent_notification \
   person \
   recorder \
+  rest \
   scene \
   script \
   search \
@@ -332,7 +338,8 @@ sed -i 's/except UnidentifiedImageError/except OSError/' image/__init__.py
 sed -i 's/zeroconf==[0-9\.]*/zeroconf/' zeroconf/manifest.json
 sed -i 's/netdisco==[0-9\.]*/netdisco/' discovery/manifest.json
 sed -i 's/PyNaCl==[0-9\.]*/PyNaCl/' mobile_app/manifest.json
-sed -i 's/"defusedxml==[0-9\.]*", "netdisco==[0-9\.]*"/"defusedxml", "netdisco"/' ssdp/manifest.json
+sed -i 's/defusedxml==[0-9\.]*/defusedxml/' ssdp/manifest.json
+sed -i 's/netdisco==[0-9\.]*/netdisco/' ssdp/manifest.json
 # remove unwanted zha requirements
 sed -i 's/"bellows==[0-9\.]*",//' zha/manifest.json
 sed -i 's/"zigpy-cc==[0-9\.]*",//' zha/manifest.json
@@ -358,8 +365,12 @@ sed -i 's/    # "mqtt"/    "mqtt"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "esphome"/    "esphome"/' homeassistant/generated/config_flows.py
 
+# backport jinja2<3.0 decorator
+sed -i 's/from jinja2 import contextfunction, pass_context/from jinja2 import contextfunction, contextfilter as pass_context/' homeassistant/helpers/template.py
+
 sed -i 's/"installation_type": "Unknown"/"installation_type": "Home Assistant on OpenWrt"/' homeassistant/helpers/system_info.py
 sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
+sed -i 's/defusedxml==[0-9\.]*//' package_constraints.txt
 
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   # downgrade using python 3.8 to be compatible with 3.7
@@ -369,6 +380,9 @@ if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   rm -rf /tmp/ha_py37.patch
 else
   sed -i 's/session.get_transaction()/session.transaction/' homeassistant/components/recorder/util.py
+  # downgrade to support sqlalchemy<1.4
+  sed -i 's/    Identity,//' homeassistant/components/recorder/models.py
+  sed -i 's/Identity(), //' homeassistant/components/recorder/models.py
 fi
 
 find . -type f -exec touch {} +
