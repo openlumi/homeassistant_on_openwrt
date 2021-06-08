@@ -8,8 +8,8 @@ PYTHON_VERSION="3.9"
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   PYTHON_VERSION="3.7"
 fi
-HOMEASSISTANT_VERSION="2021.5.5"
-HOMEASSISTANT_FRONTEND_VERSION="20210504.0"
+HOMEASSISTANT_VERSION="2021.6.3"
+HOMEASSISTANT_FRONTEND_VERSION="20210603.0"
 
 echo "Install base requirements from feed..."
 opkg update
@@ -127,7 +127,7 @@ zigpy==0.33.0
 https://github.com/zigpy/zigpy-zigate/archive/8772221faa7dfbcd31a3bba6e548c356af9faa0c.zip  # include raw mode support
 
 # fixed dependencies
-python-jose[cryptography]==3.2.0  # 3.3.0 is not compatible with the python3-cryptography in the feed
+python-jose[cryptography]==3.2.0  # (pycognito) 3.3.0 is not compatible with the python3-cryptography in the feed
 EOF
 
 pip3 install -r /tmp/requirements.txt
@@ -186,6 +186,7 @@ rm -rf hass-nabucasa-0.43.0.tar.gz hass-nabucasa-0.43.0
 
 # tmp might be small for frontend
 cd /root
+rm -rf home-assistant-frontend.tar.gz home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
 wget https://pypi.python.org/packages/source/h/home-assistant-frontend/home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}.tar.gz -O home-assistant-frontend.tar.gz
 tar -zxf home-assistant-frontend.tar.gz
 cd home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
@@ -206,13 +207,16 @@ gzip ./hass_frontend/static/translations/shopping_list/*
 
 find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
 mv hass_frontend /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
+find . -type f -exec touch {} +
 python3 setup.py install
 cd ..
 rm -rf home-assistant-frontend.tar.gz home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
 
 echo "Install HASS"
 cd /tmp
+rm -rf homeassistant.tar.gz homeassistant-${HOMEASSISTANT_VERSION}
 wget https://pypi.python.org/packages/source/h/homeassistant/homeassistant-${HOMEASSISTANT_VERSION}.tar.gz -O homeassistant.tar.gz
 tar -zxf homeassistant.tar.gz
 rm -rf homeassistant.tar.gz
@@ -372,9 +376,11 @@ python3 setup.py install
 cd ../
 rm -rf homeassistant-${HOMEASSISTANT_VERSION}/
 
-mkdir -p /etc/homeassistant
-ln -s /etc/homeassistant /root/.homeassistant
-cat << "EOF" > /etc/homeassistant/configuration.yaml
+
+if [ ! -f '/etc/homeassistant/configuration.yaml' ]; then
+  mkdir -p /etc/homeassistant
+  ln -s /etc/homeassistant /root/.homeassistant
+  cat << "EOF" > /etc/homeassistant/configuration.yaml
 # Configure a default setup of Home Assistant (frontend, api, etc)
 default_config:
 
@@ -393,10 +399,11 @@ script: !include scripts.yaml
 scene: !include scenes.yaml
 EOF
 
-touch /etc/homeassistant/groups.yaml
-touch /etc/homeassistant/automations.yaml
-touch /etc/homeassistant/scripts.yaml
-touch /etc/homeassistant/scenes.yaml
+  touch /etc/homeassistant/groups.yaml
+  touch /etc/homeassistant/automations.yaml
+  touch /etc/homeassistant/scripts.yaml
+  touch /etc/homeassistant/scenes.yaml
+fi
 
 echo "Create starting script in init.d"
 cat << "EOF" > /etc/init.d/homeassistant
@@ -408,7 +415,7 @@ USE_PROCD=1
 start_service()
 {
     procd_open_instance
-    procd_set_param command hass --config /etc/homeassistant
+    procd_set_param command hass --config /etc/homeassistant --log-file /var/log/home-assistant.log --log-rotate-days 3
     procd_set_param stdout 1
     procd_set_param stderr 1
     procd_close_instance
