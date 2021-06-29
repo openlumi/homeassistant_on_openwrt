@@ -232,6 +232,7 @@ mkdir components
 cd components-orig
 mv \
   __init__.py \
+  air_quality \
   alarm_control_panel \
   alert \
   alexa \
@@ -298,6 +299,7 @@ mv \
   tts \
   updater \
   vacuum \
+  water_heater \
   weather \
   webhook \
   websocket_api \
