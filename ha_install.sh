@@ -109,7 +109,7 @@ voluptuous==0.12.1
 voluptuous-serialize==2.4.0
 #importlib-metadata  # python3.7 wrapper
 snitun==0.21  # nabucasa dep
-tzdata-2021.1  # 2021.6 requirement
+tzdata==2021.1  # 2021.6 requirement
 
 # homeassistant manifest requirements
 async-upnp-client==0.18.0
@@ -372,7 +372,7 @@ sed -i 's/from jinja2 import contextfunction, pass_context/from jinja2 import co
 
 sed -i 's/"installation_type": "Unknown"/"installation_type": "Home Assistant on OpenWrt"/' homeassistant/helpers/system_info.py
 sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
-sed -i 's/defusedxml==[0-9\.]*//' package_constraints.txt
+sed -i 's/defusedxml==[0-9\.]*//' homeassistant/package_constraints.txt
 
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   # downgrade using python 3.8 to be compatible with 3.7
