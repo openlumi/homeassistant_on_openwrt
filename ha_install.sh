@@ -8,8 +8,8 @@ PYTHON_VERSION="3.9"
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   PYTHON_VERSION="3.7"
 fi
-HOMEASSISTANT_VERSION="2021.6.3"
-HOMEASSISTANT_FRONTEND_VERSION="20210603.0"
+HOMEASSISTANT_VERSION="2021.8.3"
+HOMEASSISTANT_FRONTEND_VERSION="20210804.0"
 
 echo "Install base requirements from feed..."
 opkg update
@@ -46,7 +46,7 @@ opkg install \
   python3-distutils \
   python3-docutils \
   python3-email \
-  python3-gdbm \
+  python3-greenlet \
   python3-idna \
   python3-jinja2 \
   python3-jmespath \
@@ -70,7 +70,6 @@ opkg install \
   python3-s3transfer \
   python3-setuptools \
   python3-six \
-  python3-sqlalchemy \
   python3-sqlite3 \
   python3-unittest \
   python3-urllib \
@@ -83,6 +82,9 @@ opkg install \
   python3-pillow \
   python3-cryptodomex \
   python3-slugify
+
+# openwrt master doesn't have this package
+opkg install python3-gdbm || true
 
 cd /tmp/
 
@@ -110,9 +112,10 @@ voluptuous-serialize==2.4.0
 #importlib-metadata  # python3.7 wrapper
 snitun==0.21  # nabucasa dep
 tzdata==2021.1  # 2021.6 requirement
+sqlalchemy==1.4.17  # recorder requirement
 
 # homeassistant manifest requirements
-async-upnp-client==0.18.0
+async-upnp-client==0.19.1
 PyQRCode==1.2.1
 pyMetno==0.8.3
 mutagen==1.45.1
@@ -120,7 +123,7 @@ pyotp==2.3.0
 gTTS==2.2.2
 pyroute2==0.5.18
 aioesphomeapi==2.6.6
-zeroconf==0.31.0  # override 0.29 from opkg to support .asyncio submodule
+zeroconf==0.33.4  # override 0.29 from opkg to support .asyncio submodule
 
 # zha requirements
 pyserial==3.5
@@ -248,6 +251,7 @@ mv \
   default_config \
   device_automation \
   device_tracker \
+  energy \
   esphome \
   fan \
   frontend \
@@ -286,8 +290,10 @@ mv \
   scene \
   script \
   search \
+  select \
   sensor \
   shopping_list \
+  siren \
   ssdp \
   stream \
   sun \
@@ -380,11 +386,6 @@ if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/downgrade_python/ha_py37.patch -O /tmp/ha_py37.patch
   patch -p1 < /tmp/ha_py37.patch
   rm -rf /tmp/ha_py37.patch
-else
-  sed -i 's/session.get_transaction()/session.transaction/' homeassistant/components/recorder/util.py
-  # downgrade to support sqlalchemy<1.4
-  sed -i 's/    Identity,//' homeassistant/components/recorder/models.py
-  sed -i 's/Identity(), //' homeassistant/components/recorder/models.py
 fi
 
 find . -type f -exec touch {} +
