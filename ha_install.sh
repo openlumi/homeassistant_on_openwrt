@@ -11,6 +11,11 @@ fi
 HOMEASSISTANT_VERSION="2021.8.5"
 HOMEASSISTANT_FRONTEND_VERSION="20210809.0"
 
+if [ $(ps | grep "[/]usr/bin/hass" | wc -l) -gt 0 ]; then
+  echo "Stop running process of Home Assistant to free RAM for installation";
+  exit 1;
+fi
+
 echo "Install base requirements from feed..."
 opkg update
 
