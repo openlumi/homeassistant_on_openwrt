@@ -177,6 +177,7 @@ tar -zxf hass-nabucasa-0.45.1.tar.gz
 cd hass-nabucasa-0.45.1
 sed -i 's/==.*"/"/' setup.py
 sed -i 's/>=.*"/"/' setup.py
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_nabucasa-*.egg
 python3 setup.py install
 cd ..
 rm -rf hass-nabucasa-0.45.1.tar.gz hass-nabucasa-0.45.1
@@ -204,6 +205,7 @@ gzip ./hass_frontend/static/translations/shopping_list/*
 find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/home_assistant_frontend-*.egg
 mv hass_frontend /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
 find . -type f -exec touch {} +
 python3 setup.py install
@@ -378,6 +380,7 @@ if [ "${OPENWRT_VERSION}" == "19.07" ]; then
 fi
 
 find . -type f -exec touch {} +
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/homeassistant-*.egg
 python3 setup.py install
 cd ../
 rm -rf homeassistant-${HOMEASSISTANT_VERSION}/
