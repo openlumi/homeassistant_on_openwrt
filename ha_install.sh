@@ -8,8 +8,8 @@ PYTHON_VERSION="3.9"
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   PYTHON_VERSION="3.7"
 fi
-HOMEASSISTANT_VERSION="2021.8.3"
-HOMEASSISTANT_FRONTEND_VERSION="20210804.0"
+HOMEASSISTANT_VERSION="2021.8.5"
+HOMEASSISTANT_FRONTEND_VERSION="20210809.0"
 
 echo "Install base requirements from feed..."
 opkg update
@@ -78,7 +78,6 @@ opkg install \
   python3-yaml \
   python3-yarl \
   python3-netdisco \
-  python3-zeroconf \
   python3-pillow \
   python3-cryptodomex \
   python3-slugify
@@ -112,15 +111,15 @@ PyQRCode==1.2.1
 pyMetno==0.8.3
 mutagen==1.45.1
 pyotp==2.3.0
-gTTS==2.2.2
+gTTS==2.2.3
 pyroute2==0.5.18
-aioesphomeapi==2.6.6
-zeroconf==0.33.4  # override 0.29 from opkg to support .asyncio submodule
+aioesphomeapi==6.1.0
+zeroconf==0.34.3
 
 # zha requirements
 pyserial==3.5
-zha-quirks==0.0.57
-zigpy==0.33.0
+zha-quirks==0.0.59
+zigpy==0.36.1
 https://github.com/zigpy/zigpy-zigate/archive/8772221faa7dfbcd31a3bba6e548c356af9faa0c.zip  # include raw mode support
 
 # fixed dependencies
@@ -128,7 +127,6 @@ python-jose[cryptography]==3.2.0  # (pycognito) 3.3.0 is not compatible with the
 EOF
 
 pip3 install -r /tmp/requirements.txt
-rm -rf /etc/homeassistant/deps/lib/python3.9/site-packages/zeroconf*
 
 # show internal serial ports for Xiaomi Gateway
 sed -i 's/ttyXRUSB\*/ttymxc[1-9]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
@@ -174,14 +172,14 @@ rm -rf python-miio-0.5.6 python-miio-0.5.6.tar.gz
 pip3 install PyXiaomiGateway==0.13.4
 
 echo "Install hass_nabucasa and ha-frontend..."
-wget https://github.com/NabuCasa/hass-nabucasa/archive/0.43.0.tar.gz -O - > hass-nabucasa-0.43.0.tar.gz
-tar -zxf hass-nabucasa-0.43.0.tar.gz
-cd hass-nabucasa-0.43.0
+wget https://github.com/NabuCasa/hass-nabucasa/archive/0.45.1.tar.gz -O - > hass-nabucasa-0.45.1.tar.gz
+tar -zxf hass-nabucasa-0.45.1.tar.gz
+cd hass-nabucasa-0.45.1
 sed -i 's/==.*"/"/' setup.py
 sed -i 's/>=.*"/"/' setup.py
 python3 setup.py install
 cd ..
-rm -rf hass-nabucasa-0.43.0.tar.gz hass-nabucasa-0.43.0
+rm -rf hass-nabucasa-0.45.1.tar.gz hass-nabucasa-0.45.1
 
 # tmp might be small for frontend
 cd /root
