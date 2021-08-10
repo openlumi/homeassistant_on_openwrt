@@ -247,6 +247,7 @@ mv \
   default_config \
   device_automation \
   device_tracker \
+  dhcp \
   energy \
   esphome \
   fan \
@@ -281,6 +282,7 @@ mv \
   onboarding \
   persistent_notification \
   person \
+  python_script \
   recorder \
   rest \
   scene \
@@ -297,14 +299,17 @@ mv \
   system_health \
   system_log \
   template \
+  time_date \
   timer \
   tts \
   updater \
   vacuum \
+  wake_on_lan \
   water_heater \
   weather \
   webhook \
   websocket_api \
+  workday \
   xiaomi_aqara \
   xiaomi_miio \
   zeroconf \
