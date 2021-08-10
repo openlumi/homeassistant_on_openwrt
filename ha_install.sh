@@ -323,6 +323,13 @@ sed -i 's/"mobile_app",//' default_config/manifest.json
 sed -i 's/"updater",//' default_config/manifest.json
 
 cd ../..
+sed -i 's/^    "_/    "_disabled_/' homeassistant/generated/zeroconf.py
+sed -i 's/_disabled_esphomelib./_esphomelib./' homeassistant/generated/zeroconf.py
+sed -i 's/_disabled_ipp./_ipp./' homeassistant/generated/zeroconf.py
+sed -i 's/_disabled_ipps./_ipps./' homeassistant/generated/zeroconf.py
+sed -i 's/_disabled_printer./_printer./' homeassistant/generated/zeroconf.py
+sed -i 's/_disabled_miio./_miio./' homeassistant/generated/zeroconf.py
+
 sed -i 's/    "/    # "/' homeassistant/generated/config_flows.py
 sed -i 's/    # "mqtt"/    "mqtt"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
