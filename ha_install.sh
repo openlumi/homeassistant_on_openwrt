@@ -96,20 +96,12 @@ wget https://raw.githubusercontent.com/pypa/setuptools/v56.0.0/_distutils_hack/o
 echo "Install base requirements from PyPI..."
 pip3 install wheel
 cat << "EOF" > /tmp/requirements.txt
-#acme==1.8.0
-#appdirs==1.4.4
 astral==2.2
 atomicwrites==1.4.0
-#attr==0.3.1
 awesomeversion==21.4.0
-#distlib==0.3.1
-#filelock==3.0.12
 PyJWT==1.7.1
-#python-slugify==4.0.1
-#text-unidecode==1.3
 voluptuous==0.12.1
 voluptuous-serialize==2.4.0
-#importlib-metadata  # python3.7 wrapper
 snitun==0.21  # nabucasa dep
 tzdata==2021.1  # 2021.6 requirement
 sqlalchemy==1.4.17  # recorder requirement
@@ -209,7 +201,6 @@ find ./hass_frontend/static/polyfills -name '*.js' -maxdepth 1 -exec rm -rf {} \
 find ./hass_frontend/static/polyfills -name '*.map' -maxdepth 1 -exec rm -rf {} \;
 
 # shopping list and calendar missing gzipped
-#gzip ./hass_frontend/static/translations/calendar/*
 gzip ./hass_frontend/static/translations/shopping_list/*
 
 find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
