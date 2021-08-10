@@ -221,6 +221,7 @@ mv \
   default_config \
   device_automation \
   device_tracker \
+  dhcp \
   fan \
   frontend \
   google_assistant \
@@ -252,6 +253,7 @@ mv \
   onboarding \
   persistent_notification \
   person \
+  python_script \
   recorder \
   scene \
   script \
@@ -264,13 +266,16 @@ mv \
   switch \
   system_health \
   system_log \
+  time_date \
   timer \
   tts \
   updater \
   vacuum \
+  wake_on_lan \
   weather \
   webhook \
   websocket_api \
+  workday \
   xiaomi_aqara \
   xiaomi_miio \
   zeroconf \
