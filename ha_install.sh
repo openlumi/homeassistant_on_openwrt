@@ -235,19 +235,24 @@ mv \
   alarm_control_panel \
   alert \
   alexa \
+  analytics \
   api \
   auth \
   automation \
   binary_sensor \
+  blueprint \
+  brother \
   camera \
   climate \
   cloud \
   config \
+  counter \
   cover \
   default_config \
   device_automation \
   device_tracker \
   dhcp \
+  discovery \
   energy \
   esphome \
   fan \
@@ -260,6 +265,7 @@ mv \
   homeassistant \
   http \
   humidifier \
+  image \
   image_processing \
   input_boolean \
   input_datetime \
@@ -269,22 +275,29 @@ mv \
   ipp \
   light \
   lock \
-  logger \
   logbook \
+  logger \
   lovelace \
+  manual \
   map \
   media_player \
+  media_source \
   met \
   mobile_app \
+  mpd \
+  mqtt \
+  my \
   network \
   notify \
   number \
   onboarding \
+  panel_custom \
   persistent_notification \
   person \
   python_script \
   recorder \
   rest \
+  safe_mode \
   scene \
   script \
   search \
@@ -298,11 +311,16 @@ mv \
   switch \
   system_health \
   system_log \
+  tag \
+  telegram \
+  telegram_bot \
   template \
   time_date \
   timer \
+  trace \
   tts \
   updater \
+  upnp \
   vacuum \
   wake_on_lan \
   water_heater \
@@ -315,23 +333,6 @@ mv \
   zeroconf \
   zha \
   zone \
-  blueprint \
-  counter \
-  image \
-  media_source \
-  tag \
-  panel_custom \
-  brother \
-  discovery \
-  mqtt \
-  mpd \
-  telegram \
-  telegram_bot \
-  trace \
-  analytics \
-  my \
-  safe_mode \
-  upnp \
   ../components
 cd ..
 rm -rf components-orig
