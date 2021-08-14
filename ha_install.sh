@@ -221,7 +221,6 @@ mv \
   default_config \
   device_automation \
   device_tracker \
-  dhcp \
   fan \
   frontend \
   google_assistant \
