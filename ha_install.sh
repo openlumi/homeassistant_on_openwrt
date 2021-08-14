@@ -375,6 +375,15 @@ sed -i 's/    # "mqtt"/    "mqtt"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "esphome"/    "esphome"/' homeassistant/generated/config_flows.py
 
+# disabling all zeroconf services
+sed -i 's/^    "_/    "_disabled_/' homeassistant/generated/zeroconf.py
+# re-enable required ones
+sed -i 's/_disabled_esphomelib./_esphomelib./' homeassistant/generated/zeroconf.py
+sed -i 's/_disabled_ipps./_ipps./' homeassistant/generated/zeroconf.py
+sed -i 's/_disabled_ipp./_ipp./' homeassistant/generated/zeroconf.py
+sed -i 's/_disabled_printer./_printer./' homeassistant/generated/zeroconf.py
+sed -i 's/_disabled_miio./_miio./' homeassistant/generated/zeroconf.py
+
 # backport jinja2<3.0 decorator
 sed -i 's/from jinja2 import contextfunction, pass_context/from jinja2 import contextfunction, contextfilter as pass_context/' homeassistant/helpers/template.py
 
