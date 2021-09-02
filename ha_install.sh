@@ -8,8 +8,13 @@ PYTHON_VERSION="3.9"
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   PYTHON_VERSION="3.7"
 fi
-HOMEASSISTANT_VERSION="2021.8.5"
-HOMEASSISTANT_FRONTEND_VERSION="20210809.0"
+HOMEASSISTANT_VERSION="2021.9.0"
+HOMEASSISTANT_FRONTEND_VERSION="20210830.0"
+
+PYCOGNITO_VER=2021.03.1  # zero is required
+IPP_VER=0.11.0
+PYTHON_MIIO_VER=0.5.7
+NABUCASA_VER=0.47.1
 
 if [ $(ps | grep "[/]usr/bin/hass" | wc -l) -gt 0 ]; then
   echo "Stop running process of Home Assistant to free RAM for installation";
@@ -108,23 +113,23 @@ voluptuous==0.12.1
 voluptuous-serialize==2.4.0
 snitun==0.21  # nabucasa dep
 tzdata==2021.1  # 2021.6 requirement
-sqlalchemy==1.4.17  # recorder requirement
+sqlalchemy==1.4.23  # recorder requirement
 
 # homeassistant manifest requirements
-async-upnp-client==0.19.1
+async-upnp-client==0.20.0
 PyQRCode==1.2.1
 pyMetno==0.8.3
 mutagen==1.45.1
 pyotp==2.3.0
 gTTS==2.2.3
 pyroute2==0.5.18
-aioesphomeapi==6.1.0
-zeroconf==0.34.3
+aioesphomeapi==8.0.0
+zeroconf==0.36.2
 
 # zha requirements
 pyserial==3.5
-zha-quirks==0.0.59
-zigpy==0.36.1
+zha-quirks==0.0.60
+zigpy==0.37.1
 https://github.com/zigpy/zigpy-zigate/archive/8772221faa7dfbcd31a3bba6e548c356af9faa0c.zip  # include raw mode support
 
 # fixed dependencies
@@ -143,49 +148,49 @@ sed -i 's/botocore<1.13.0,>=1.12.135/botocore<1.13.0,>=1.12.0/' /usr/lib/python$
 
 echo "Download files"
 
-wget https://github.com/pvizeli/pycognito/archive/0.1.4.tar.gz -O - > pycognito-0.1.4.tgz
-wget https://github.com/ctalkington/python-ipp/archive/0.11.0.tar.gz -O - > python-ipp-0.11.0.tgz
-wget https://pypi.python.org/packages/source/p/python-miio/python-miio-0.5.6.tar.gz -O - > python-miio-0.5.6.tar.gz
+wget https://github.com/pvizeli/pycognito/archive/${PYCOGNITO_VER}.tar.gz -O - > pycognito-${PYCOGNITO_VER}.tgz
+wget https://github.com/ctalkington/python-ipp/archive/${IPP_VER}.tar.gz -O - > python-ipp-${IPP_VER}.tgz
+wget https://pypi.python.org/packages/source/p/python-miio/python-miio-${PYTHON_MIIO_VER}.tar.gz -O - > python-miio-${PYTHON_MIIO_VER}.tar.gz
 echo "Installing pycognito..."
 
-tar -zxf pycognito-0.1.4.tgz
-cd pycognito-0.1.4
+tar -zxf pycognito-${PYCOGNITO_VER}.tgz
+cd pycognito-${PYCOGNITO_VER}
 sed -i 's/boto3>=[0-9\.]*/boto3/' setup.py
 python3 setup.py install
 cd ..
-rm -rf pycognito-0.1.4 pycognito-0.1.4.tgz
+rm -rf pycognito-${PYCOGNITO_VER} pycognito-${PYCOGNITO_VER}.tgz
 
 echo "Installing python-ipp..."
-tar -zxf python-ipp-0.11.0.tgz
-cd python-ipp-0.11.0
+tar -zxf python-ipp-${IPP_VER}.tgz
+cd python-ipp-${IPP_VER}
 sed -i 's/aiohttp>=[0-9\.]*/aiohttp/' requirements.txt
 sed -i 's/yarl>=[0-9\.]*/yarl/' requirements.txt
 python3 setup.py install
 cd ..
-rm -rf python-ipp-0.11.0 python-ipp-0.11.0.tgz
+rm -rf python-ipp-${IPP_VER} python-ipp-${IPP_VER}.tgz
 
 
 echo "Installing python-miio..."
-tar -zxf python-miio-0.5.6.tar.gz
-cd python-miio-0.5.6
+tar -zxf python-miio-${PYTHON_MIIO_VER}.tar.gz
+cd python-miio-${PYTHON_MIIO_VER}
 sed -i 's/cryptography>=3,<4/cryptography>=2,<4/' setup.py
 sed -i 's/click>=7,<8/click/' setup.py
 find . -type f -exec touch {} +
 python3 setup.py install
 cd ..
-rm -rf python-miio-0.5.6 python-miio-0.5.6.tar.gz
+rm -rf python-miio-${PYTHON_MIIO_VER} python-miio-${PYTHON_MIIO_VER}.tar.gz
 pip3 install PyXiaomiGateway==0.13.4
 
 echo "Install hass_nabucasa and ha-frontend..."
-wget https://github.com/NabuCasa/hass-nabucasa/archive/0.45.1.tar.gz -O - > hass-nabucasa-0.45.1.tar.gz
-tar -zxf hass-nabucasa-0.45.1.tar.gz
-cd hass-nabucasa-0.45.1
+wget https://github.com/NabuCasa/hass-nabucasa/archive/${NABUCASA_VER}.tar.gz -O - > hass-nabucasa-${NABUCASA_VER}.tar.gz
+tar -zxf hass-nabucasa-${NABUCASA_VER}.tar.gz
+cd hass-nabucasa-${NABUCASA_VER}
 sed -i 's/==.*"/"/' setup.py
 sed -i 's/>=.*"/"/' setup.py
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_nabucasa-*.egg
 python3 setup.py install
 cd ..
-rm -rf hass-nabucasa-0.45.1.tar.gz hass-nabucasa-0.45.1
+rm -rf hass-nabucasa-${NABUCASA_VER}.tar.gz hass-nabucasa-${NABUCASA_VER}
 
 # tmp might be small for frontend
 cd /root
@@ -321,6 +326,7 @@ mv \
   tts \
   updater \
   upnp \
+  usb \
   vacuum \
   wake_on_lan \
   water_heater \
@@ -368,12 +374,14 @@ sed -i 's/"cloud",//' default_config/manifest.json
 sed -i 's/"dhcp",//' default_config/manifest.json
 sed -i 's/"mobile_app",//' default_config/manifest.json
 sed -i 's/"updater",//' default_config/manifest.json
+sed -i 's/"usb",//' default_config/manifest.json
 
 cd ../..
 sed -i 's/    "/    # "/' homeassistant/generated/config_flows.py
 sed -i 's/    # "mqtt"/    "mqtt"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "esphome"/    "esphome"/' homeassistant/generated/config_flows.py
+sed -i 's/    # "met"/    "met"/' homeassistant/generated/config_flows.py
 
 # disabling all zeroconf services
 sed -i 's/^    "_/    "_disabled_/' homeassistant/generated/zeroconf.py
