@@ -14,7 +14,7 @@ HOMEASSISTANT_FRONTEND_VERSION="20210830.0"
 PYCOGNITO_VER=2021.03.1  # zero is required
 IPP_VER=0.11.0
 PYTHON_MIIO_VER=0.5.8
-NABUCASA_VER=0.47.1
+NABUCASA_VER=0.46.0
 
 if [ $(ps | grep "[/]usr/bin/hass" | wc -l) -gt 0 ]; then
   echo "Stop running process of Home Assistant to free RAM for installation";
