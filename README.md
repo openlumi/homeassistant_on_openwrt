@@ -1,6 +1,6 @@
 # Homeassistant on OpenWrt
 
-This repo provides tools to install the latest version of Home Assistant. (2021.9.1)
+This repo provides tools to install the latest version of Home Assistant. (2021.9.5)
 on a system with OpenWrt 21.02-rc1+ installed. It provides the reduced version of HA with only minimal list of components 
 included. Additionally, it keeps MQTT, ESPHome, and ZHA components as they are 
 widely used with smart home solutions.
@@ -53,12 +53,12 @@ restarted.**
 
 You may want to add more components to your HA installation.
 In this case you have to download tar.gz from PyPI:
-https://pypi.org/project/homeassistant/2021.9.1/#files
+https://pypi.org/project/homeassistant/2021.9.5/#files
 Then extract the content and copy the required components to 
-`/usr/lib/python3.9/site-packages/homeassistant-2021.9.1-py3.9.egg/homeassistant/components`
+`/usr/lib/python3.9/site-packages/homeassistant-2021.9.5-py3.9.egg/homeassistant/components`
 If the component uses the frontend wizard, you may want to uncomment the
 corresponding line in 
-`/usr/lib/python3.9/site-packages/homeassistant-2021.9.1-py3.9.egg/homeassistant/generated/config_flows.py`
+`/usr/lib/python3.9/site-packages/homeassistant-2021.9.5-py3.9.egg/homeassistant/generated/config_flows.py`
 also.
 
 Or you can create `custom_components` directory in `/etc/homeassistant` and
