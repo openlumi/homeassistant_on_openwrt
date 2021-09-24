@@ -262,6 +262,7 @@ mv \
   esphome \
   fan \
   frontend \
+  geo_location \
   google_assistant \
   google_translate \
   group \
@@ -301,6 +302,7 @@ mv \
   person \
   python_script \
   recorder \
+  remote \
   rest \
   safe_mode \
   scene \
