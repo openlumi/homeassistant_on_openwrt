@@ -8,13 +8,13 @@ PYTHON_VERSION="3.9"
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   PYTHON_VERSION="3.7"
 fi
-HOMEASSISTANT_VERSION="2021.9.5"
-HOMEASSISTANT_FRONTEND_VERSION="20210830.0"
+HOMEASSISTANT_VERSION="2021.10.0"
+HOMEASSISTANT_FRONTEND_VERSION="20211006.0"
 
 PYCOGNITO_VER=2021.03.1  # zero is required
 IPP_VER=0.11.0
 PYTHON_MIIO_VER=0.5.8
-NABUCASA_VER=0.46.0
+NABUCASA_VER=0.50.0
 
 if [ $(ps | grep "[/]usr/bin/hass" | wc -l) -gt 0 ]; then
   echo "Stop running process of Home Assistant to free RAM for installation";
@@ -107,29 +107,29 @@ pip3 install wheel
 cat << "EOF" > /tmp/requirements.txt
 astral==2.2
 atomicwrites==1.4.0
-awesomeversion==21.4.0
-PyJWT==1.7.1
-voluptuous==0.12.1
+awesomeversion==21.8.1
+PyJWT==2.1.0
+voluptuous==0.12.2
 voluptuous-serialize==2.4.0
-snitun==0.21  # nabucasa dep
+snitun==0.30.0  # nabucasa dep
 tzdata==2021.1  # 2021.6 requirement
 sqlalchemy==1.4.23  # recorder requirement
 
 # homeassistant manifest requirements
-async-upnp-client==0.20.0
+async-upnp-client==0.22.5
 PyQRCode==1.2.1
 pyMetno==0.8.3
 mutagen==1.45.1
 pyotp==2.3.0
 gTTS==2.2.3
 pyroute2==0.5.18
-aioesphomeapi==8.0.0
-zeroconf==0.36.2
+aioesphomeapi==9.1.5
+zeroconf==0.36.7
 
 # zha requirements
 pyserial==3.5
-zha-quirks==0.0.60
-zigpy==0.37.1
+zha-quirks==0.0.62
+zigpy==0.38.0
 https://github.com/zigpy/zigpy-zigate/archive/8772221faa7dfbcd31a3bba6e548c356af9faa0c.zip  # include raw mode support
 
 # fixed dependencies
@@ -338,6 +338,7 @@ mv \
   workday \
   xiaomi_aqara \
   xiaomi_miio \
+  yeelight \
   zeroconf \
   zha \
   zone \
