@@ -9,12 +9,34 @@ if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   PYTHON_VERSION="3.7"
 fi
 HOMEASSISTANT_VERSION="2021.10.2"
-HOMEASSISTANT_FRONTEND_VERSION="20211007.0"
 
-PYCOGNITO_VER=2021.03.1  # zero is required
-IPP_VER=0.11.0
-PYTHON_MIIO_VER=0.5.8
-NABUCASA_VER=0.50.0
+echo "=========================================="
+echo " Installing Home Assistant ${HOMEASSISTANT_VERSION} ..."
+echo "=========================================="
+
+get_version()
+{
+  local pkg=$1
+  cat /tmp/ha_requirements.txt | grep -i -m 1 "${pkg}[>=]=" | sed 's/.*==\(.*\)/\1/g'
+}
+
+version()
+{
+  local pkg=$1
+  echo "$pkg==$(get_version $pkg)"
+}
+
+wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/homeassistant/package_constraints.txt -O - > /tmp/ha_requirements.txt
+wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements.txt -O - >> /tmp/ha_requirements.txt
+wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements_all.txt -O - >> /tmp/ha_requirements.txt
+# now we can fetch nabucasa version and its deps
+wget -q https://raw.githubusercontent.com/NabuCasa/hass-nabucasa/$(get_version hass-nabucasa)/setup.py -O - | grep '[>=]=' | sed -E 's/\s*"(.*)",?/\1/' >> /tmp/ha_requirements.txt
+
+PYCOGNITO_VER=2021.03.1  # zero is required, incorrect version in github
+HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
+IPP_VER=$(get_version pyipp)
+PYTHON_MIIO_VER=$(get_version python-miio)
+NABUCASA_VER=$(get_version hass-nabucasa)
 
 if [ $(ps | grep "[/]usr/bin/hass" | wc -l) -gt 0 ]; then
   echo "Stop running process of Home Assistant to free RAM for installation";
@@ -104,36 +126,36 @@ wget https://raw.githubusercontent.com/pypa/setuptools/v56.0.0/_distutils_hack/o
 
 echo "Install base requirements from PyPI..."
 pip3 install wheel
-cat << "EOF" > /tmp/requirements.txt
-astral==2.2
-atomicwrites==1.4.0
-awesomeversion==21.8.1
-PyJWT==2.1.0
-voluptuous==0.12.2
-voluptuous-serialize==2.4.0
-snitun==0.30.0  # nabucasa dep
-tzdata==2021.1  # 2021.6 requirement
-sqlalchemy==1.4.23  # recorder requirement
+cat << EOF > /tmp/requirements.txt
+tzdata==2021.2.post0  # 2021.6+ requirement
+
+$(version atomicwrites)  # nabucasa dep
+$(version snitun)  # nabucasa dep
+$(version astral)
+$(version awesomeversion)
+$(version PyJWT)
+$(version voluptuous)
+$(version voluptuous-serialize)
+$(version sqlalchemy)  # recorder requirement
 
 # homeassistant manifest requirements
-async-upnp-client==0.22.7
-PyQRCode==1.2.1
-pyMetno==0.8.3
-mutagen==1.45.1
-pyotp==2.3.0
-gTTS==2.2.3
-pyroute2==0.5.18
-aioesphomeapi==9.1.5
-zeroconf==0.36.7
+$(version async-upnp-client)
+$(version PyQRCode)
+$(version pyMetno)
+$(version mutagen)
+$(version pyotp)
+$(version gTTS)
+$(version aioesphomeapi)
+$(version zeroconf)
 
 # zha requirements
-pyserial==3.5
-zha-quirks==0.0.62
-zigpy==0.38.0
+$(version pyserial)
+$(version zha-quirks)
+$(version zigpy)
 https://github.com/zigpy/zigpy-zigate/archive/8772221faa7dfbcd31a3bba6e548c356af9faa0c.zip  # include raw mode support
 
 # fixed dependencies
-python-jose[cryptography]==3.2.0  # (pycognito) 3.3.0 is not compatible with the python3-cryptography in the feed
+python-jose[cryptography]==3.2.0  # (pycognito dep) 3.3.0 is not compatible with the python3-cryptography in the feed
 EOF
 
 pip3 install -r /tmp/requirements.txt
