@@ -8,8 +8,8 @@ PYTHON_VERSION="3.9"
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   PYTHON_VERSION="3.7"
 fi
-HOMEASSISTANT_VERSION="2021.10.0"
-HOMEASSISTANT_FRONTEND_VERSION="20211006.0"
+HOMEASSISTANT_VERSION="2021.10.2"
+HOMEASSISTANT_FRONTEND_VERSION="20211007.0"
 
 PYCOGNITO_VER=2021.03.1  # zero is required
 IPP_VER=0.11.0
@@ -116,7 +116,7 @@ tzdata==2021.1  # 2021.6 requirement
 sqlalchemy==1.4.23  # recorder requirement
 
 # homeassistant manifest requirements
-async-upnp-client==0.22.5
+async-upnp-client==0.22.7
 PyQRCode==1.2.1
 pyMetno==0.8.3
 mutagen==1.45.1
