@@ -8,7 +8,7 @@ PYTHON_VERSION="3.9"
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   PYTHON_VERSION="3.7"
 fi
-HOMEASSISTANT_VERSION="2021.10.2"
+HOMEASSISTANT_VERSION="2021.10.6"
 
 echo "=========================================="
 echo " Installing Home Assistant ${HOMEASSISTANT_VERSION} ..."
