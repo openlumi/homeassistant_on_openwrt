@@ -44,6 +44,18 @@ https://github.com/openlumi/ZiGate/releases/download/v3.1e/ZiGate_31e_JN5169_COO
 You could try another Zigate firmwares for JN5169 chip. The baud rate
 must be 115200 as it is hardcoded in zigpy-zigate.
 
+It is REQUIRED to erase Persistent Data Manager (PDM) before adding new devices.
+Otherwise, device adding fails.
+
+Use luci zigbee tools submenu to send erase PDM command with the button or
+erase PDM in console:
+
+```sh
+jntool erase_pdm
+```
+
+Zigbee port must not be locked with any program, like ZHA or zigbee2mqtt.
+
 **NOTE: It may require restarting Home Assistant after adding a new 
 component via the UI to let it see newly installed requirements. 
 E.g. ZHA installs paho-mqtt and will not allow configuring it unless HA is 
