@@ -44,6 +44,8 @@ https://github.com/openlumi/ZiGate/releases/download/v3.1e/ZiGate_31e_JN5169_COO
 You could try another Zigate firmwares for JN5169 chip. The baud rate
 must be 115200 as it is hardcoded in zigpy-zigate.
 
+Use **/dev/ttymxc1** port for ZHA configuration, it is connected to the zigbee chip.
+
 It is REQUIRED to erase Persistent Data Manager (PDM) before adding new devices.
 Otherwise, device adding fails.
 
