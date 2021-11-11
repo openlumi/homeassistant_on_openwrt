@@ -8,7 +8,20 @@ PYTHON_VERSION="3.9"
 if [ "${OPENWRT_VERSION}" == "19.07" ]; then
   PYTHON_VERSION="3.7"
 fi
-HOMEASSISTANT_VERSION="2021.11.2"
+
+HOMEASSISTANT_MAJOR_VERSION="2021.11"
+
+get_ha_version()
+{
+  wget -q -O- https://pypi.org/simple/homeassistant/ | grep ${HOMEASSISTANT_MAJOR_VERSION} | tail -n 1 | cut -d "-" -f2 | cut -d "." -f1,2,3
+}
+
+HOMEASSISTANT_VERSION=$(get_ha_version)
+
+if [ "${HOMEASSISTANT_VERSION}" == "" ]; then
+  echo "Incorrect Home Assistant version. Exiting ...";
+  exit 1;
+fi
 
 echo "=========================================="
 echo " Installing Home Assistant ${HOMEASSISTANT_VERSION} ..."
