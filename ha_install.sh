@@ -169,6 +169,9 @@ https://github.com/zigpy/zigpy-zigate/archive/8772221faa7dfbcd31a3bba6e548c356af
 
 # fixed dependencies
 python-jose[cryptography]==3.2.0  # (pycognito dep) 3.3.0 is not compatible with the python3-cryptography in the feed
+
+# extra services
+hass-configurator==0.4.1
 EOF
 
 pip3 install -r /tmp/requirements.txt
@@ -333,6 +336,7 @@ mv \
   number \
   onboarding \
   panel_custom \
+  panel_iframe \
   persistent_notification \
   person \
   python_script \
@@ -451,11 +455,12 @@ python3 setup.py install
 cd ../
 rm -rf homeassistant-${HOMEASSISTANT_VERSION}/
 
+IP=$(ip a | grep "inet " | cut -d " " -f6 | tail -1 | cut -d / -f1)
 
 if [ ! -f '/etc/homeassistant/configuration.yaml' ]; then
   mkdir -p /etc/homeassistant
   ln -s /etc/homeassistant /root/.homeassistant
-  cat << "EOF" > /etc/homeassistant/configuration.yaml
+  cat << EOF > /etc/homeassistant/configuration.yaml
 # Configure a default setup of Home Assistant (frontend, api, etc)
 default_config:
 
@@ -467,6 +472,12 @@ tts:
 recorder:
   purge_keep_days: 2
   db_url: 'sqlite:///:memory:'
+
+panel_iframe:
+  configurator:
+    title: Configurator
+    icon: mdi:square-edit-outline
+    url: http://${IP}:3218
 
 group: !include groups.yaml
 automation: !include automations.yaml
@@ -498,5 +509,23 @@ start_service()
 EOF
 chmod +x /etc/init.d/homeassistant
 /etc/init.d/homeassistant enable
+
+cat << "EOF" > /etc/init.d/hass-configurator
+#!/bin/sh /etc/rc.common
+
+START=99
+USE_PROCD=1
+
+start_service()
+{
+    procd_open_instance
+    procd_set_param command hass-configurator -b /etc/homeassistant
+    procd_set_param stdout 1
+    procd_set_param stderr 1
+    procd_close_instance
+}
+EOF
+chmod +x /etc/init.d/hass-configurator
+/etc/init.d/hass-configurator enable
 
 echo "Done."
