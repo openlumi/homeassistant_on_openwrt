@@ -4,11 +4,6 @@
 set -e
 
 OPENWRT_VERSION=${OPENWRT_VERSION:-21.02}
-PYTHON_VERSION="3.9"
-if [ "${OPENWRT_VERSION}" == "19.07" ]; then
-  PYTHON_VERSION="3.7"
-fi
-
 HOMEASSISTANT_MAJOR_VERSION="2021.11"
 
 get_ha_version()
@@ -26,6 +21,11 @@ fi
 echo "=========================================="
 echo " Installing Home Assistant ${HOMEASSISTANT_VERSION} ..."
 echo "=========================================="
+
+get_python_version()
+{
+  opkg list | grep python3-base | head -n 1 | grep -Eo '\d+\.\d+'
+}
 
 get_version()
 {
@@ -58,6 +58,9 @@ fi
 
 echo "Install base requirements from feed..."
 opkg update
+
+PYTHON_VERSION=$(get_python_version)
+echo "Detected Python ${PYTHON_VERSION}"
 
 # Install them first to check Openlumi feed id added
 opkg install \
