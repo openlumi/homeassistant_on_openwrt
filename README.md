@@ -8,7 +8,7 @@ widely used with smart home solutions.
 It is distributed with a shell script that downloads and installs everything that required for a clean start.
 
 ### Requirements:
-- 120 MB storage space (256 recommended)
+- 256 MB storage space
 - 128 MB RAM
 - OpenWrt 21.02.0 or newer installed
 
