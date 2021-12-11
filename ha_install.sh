@@ -4,7 +4,7 @@
 set -e
 
 OPENWRT_VERSION=${OPENWRT_VERSION:-21.02}
-HOMEASSISTANT_MAJOR_VERSION="2021.11"
+HOMEASSISTANT_MAJOR_VERSION="2021.12"
 
 get_ha_version()
 {
@@ -189,7 +189,7 @@ fi
 
 pip3 install -r /tmp/requirements.txt
 
-if [ $LUMI_GATEWAY]; then
+if [ $LUMI_GATEWAY ]; then
   # show internal serial ports for Xiaomi Gateway
   sed -i 's/ttyXRUSB\*/ttymxc[1-9]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
   sed -i 's/if info.subsystem != "platform"]/]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
@@ -226,13 +226,14 @@ rm -rf python-ipp-${IPP_VER} python-ipp-${IPP_VER}.tgz
 echo "Installing python-miio..."
 tar -zxf python-miio-${PYTHON_MIIO_VER}.tar.gz
 cd python-miio-${PYTHON_MIIO_VER}
-sed -i 's/cryptography>=3,<4/cryptography>=2,<4/' setup.py
-sed -i 's/click>=7,<8/click/' setup.py
+sed -i 's/cryptography[0-9><=]*/cryptography>=2/' setup.py
+sed -i 's/click[0-9><=]*/click/' setup.py
+sed -i "s/'extras_require'/# 'extras_require'/" setup.py
 find . -type f -exec touch {} +
 python3 setup.py install
 cd ..
 rm -rf python-miio-${PYTHON_MIIO_VER} python-miio-${PYTHON_MIIO_VER}.tar.gz
-pip3 install PyXiaomiGateway==0.13.4
+pip3 install $(version PyXiaomiGateway)
 
 echo "Install hass_nabucasa and ha-frontend..."
 wget https://github.com/NabuCasa/hass-nabucasa/archive/${NABUCASA_VER}.tar.gz -O - > hass-nabucasa-${NABUCASA_VER}.tar.gz
@@ -459,6 +460,8 @@ sed -i 's/_disabled_miio./_miio./' homeassistant/generated/zeroconf.py
 
 # backport jinja2<3.0 decorator
 sed -i 's/from jinja2 import contextfunction, pass_context/from jinja2 import contextfunction, contextfilter as pass_context/' homeassistant/helpers/template.py
+# backport async_timout.timeout
+sed -i  's/def timeout(/timeout = async_timeout.timeout\n\ndef timeout1(/' homeassistant/async_timeout_backcompat.py || true
 
 sed -i 's/"installation_type": "Unknown"/"installation_type": "Home Assistant on OpenWrt"/' homeassistant/helpers/system_info.py
 sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
