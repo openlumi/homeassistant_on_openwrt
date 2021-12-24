@@ -301,6 +301,7 @@ mv \
   binary_sensor \
   blueprint \
   brother \
+  button \
   camera \
   climate \
   cloud \
