@@ -4,7 +4,7 @@
 set -e
 
 OPENWRT_VERSION=${OPENWRT_VERSION:-21.02}
-HOMEASSISTANT_MAJOR_VERSION="2021.12"
+HOMEASSISTANT_MAJOR_VERSION="2022.2"
 
 get_ha_version()
 {
@@ -50,10 +50,11 @@ wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VE
 # now we can fetch nabucasa version and its deps
 wget -q https://raw.githubusercontent.com/NabuCasa/hass-nabucasa/$(get_version hass-nabucasa)/setup.py -O - | grep '[>=]=' | sed -E 's/\s*"(.*)",?/\1/' >> /tmp/ha_requirements.txt
 
-PYCOGNITO_VER=2021.03.1  # zero is required, incorrect version in github
+PYCOGNITO_VER=2022.01.0  # zero is required, incorrect version in github
 HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
 IPP_VER=$(get_version pyipp)
 PYTHON_MIIO_VER=$(get_version python-miio)
+AIODISCOVER_VER=$(get_version aiodiscover)
 NABUCASA_VER=$(get_version hass-nabucasa)
 
 if [ $(ps | grep "[/]usr/bin/hass" | wc -l) -gt 0 ]; then
@@ -183,7 +184,7 @@ if [ $LUMI_GATEWAY ]; then
 $(version pyserial)
 $(version zha-quirks)
 $(version zigpy)
-https://github.com/zigpy/zigpy-zigate/archive/8772221faa7dfbcd31a3bba6e548c356af9faa0c.zip  # include raw mode support
+https://github.com/zigpy/zigpy-zigate/archive/078f0d46f28caf659725e32e09010634d6d0f936.zip  # include raw mode support
 EOF
 fi
 
@@ -204,6 +205,7 @@ echo "Download files"
 wget https://github.com/pvizeli/pycognito/archive/${PYCOGNITO_VER}.tar.gz -O - > pycognito-${PYCOGNITO_VER}.tgz
 wget https://github.com/ctalkington/python-ipp/archive/${IPP_VER}.tar.gz -O - > python-ipp-${IPP_VER}.tgz
 wget https://pypi.python.org/packages/source/p/python-miio/python-miio-${PYTHON_MIIO_VER}.tar.gz -O - > python-miio-${PYTHON_MIIO_VER}.tar.gz
+wget https://pypi.python.org/packages/source/a/aiodiscover/aiodiscover-${AIODISCOVER_VER}.tar.gz -O - > aiodiscover-${AIODISCOVER_VER}.tar.gz
 echo "Installing pycognito..."
 
 tar -zxf pycognito-${PYCOGNITO_VER}.tgz
@@ -235,6 +237,15 @@ cd ..
 rm -rf python-miio-${PYTHON_MIIO_VER} python-miio-${PYTHON_MIIO_VER}.tar.gz
 pip3 install $(version PyXiaomiGateway)
 
+echo "Installing aiodiscover..."
+tar -zxf aiodiscover-${AIODISCOVER_VER}.tar.gz
+cd aiodiscover-${AIODISCOVER_VER}
+sed -i 's/netifaces[0-9.><=]*/netifaces/' setup.py
+find . -type f -exec touch {} +
+python3 setup.py install
+cd ..
+rm -rf aiodiscover-${AIODISCOVER_VER} aiodiscover-${AIODISCOVER_VER}.tar.gz
+
 echo "Install hass_nabucasa and ha-frontend..."
 wget https://github.com/NabuCasa/hass-nabucasa/archive/${NABUCASA_VER}.tar.gz -O - > hass-nabucasa-${NABUCASA_VER}.tar.gz
 tar -zxf hass-nabucasa-${NABUCASA_VER}.tar.gz
@@ -249,6 +260,8 @@ rm -rf hass-nabucasa-${NABUCASA_VER}.tar.gz hass-nabucasa-${NABUCASA_VER}
 # tmp might be small for frontend
 cd /root
 rm -rf home-assistant-frontend.tar.gz home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/home_assistant_frontend-*.egg
 wget https://pypi.python.org/packages/source/h/home-assistant-frontend/home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}.tar.gz -O home-assistant-frontend.tar.gz
 tar -zxf home-assistant-frontend.tar.gz
 cd home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
@@ -268,8 +281,6 @@ gzip ./hass_frontend/static/translations/shopping_list/*
 
 find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 
-rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
-rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/home_assistant_frontend-*.egg
 mv hass_frontend /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
 find . -type f -exec touch {} +
 python3 setup.py install
@@ -312,6 +323,7 @@ mv \
   device_automation \
   device_tracker \
   dhcp \
+  diagnostics \
   discovery \
   energy \
   esphome \
@@ -329,6 +341,7 @@ mv \
   image \
   image_processing \
   input_boolean \
+  input_button \
   input_datetime \
   input_number \
   input_select \
@@ -477,6 +490,8 @@ if [ "${OPENWRT_VERSION}" == "19.07" ]; then
 fi
 
 find . -type f -exec touch {} +
+sed -i "s/[>=]=.*//g" setup.cfg
+
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/homeassistant-*.egg
 python3 setup.py install
 cd ../
