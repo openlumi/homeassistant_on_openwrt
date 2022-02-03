@@ -1,6 +1,6 @@
 # Homeassistant on OpenWrt
 
-This repo provides tools to install the latest version of Home Assistant. (2021.12.0)
+This repo provides tools to install the latest version of Home Assistant. (2022.2.0)
 on a system with OpenWrt 21.02+ installed. It provides the reduced version of HA with only minimal list of components 
 included. Additionally, it keeps MQTT, ESPHome, and ZHA components as they are 
 widely used with smart home solutions.
@@ -37,9 +37,9 @@ requirement versions or python libraries.
 
 The component uses internal UART to communicate with ZigBee chip.
 The chip has to be flashed with a proper firmware to be able to 
-communicate with the HA. The recommended firmware is 
+communicate with the HA. The recommended firmware is v3.21:
 
-https://github.com/openlumi/ZiGate/releases/download/v3.1e/ZiGate_31e_JN5169_COORDINATOR_115200.bin
+https://github.com/openlumi/ZiGate/releases/download/990c--20220102-2320/ZigbeeNodeControlBridge_JN5169_COORDINATOR_115200.bin
 
 You could try another Zigate firmwares for JN5169 chip. The baud rate
 must be 115200 as it is hardcoded in zigpy-zigate.
@@ -67,12 +67,12 @@ restarted.**
 
 You may want to add more components to your HA installation.
 In this case you have to download tar.gz from PyPI:
-https://pypi.org/project/homeassistant/2021.12.0/#files
+https://pypi.org/project/homeassistant/2022.2.0/#files
 Then extract the content and copy the required components to 
-`/usr/lib/python3.9/site-packages/homeassistant-2021.12.0-py3.9.egg/homeassistant/components`
+`/usr/lib/python3.9/site-packages/homeassistant-2022.2.0-py3.9.egg/homeassistant/components`
 If the component uses the frontend wizard, you may want to uncomment the
 corresponding line in 
-`/usr/lib/python3.9/site-packages/homeassistant-2021.12.0-py3.9.egg/homeassistant/generated/config_flows.py`
+`/usr/lib/python3.9/site-packages/homeassistant-2022.2.0-py3.9.egg/homeassistant/generated/config_flows.py`
 also.
 
 Or you can create `custom_components` directory in `/etc/homeassistant` and
