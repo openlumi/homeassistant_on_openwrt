@@ -58,7 +58,7 @@ AIODISCOVER_VER=$(get_version aiodiscover)
 NABUCASA_VER=$(get_version hass-nabucasa)
 
 if [ $(ps | grep "[/]usr/bin/hass" | wc -l) -gt 0 ]; then
-  echo "Stop running process of Home Assistant to free RAM for installation";
+  echo "Stop running process of Home Assistant (and HASS Configurator) to free RAM for installation";
   exit 1;
 fi
 
