@@ -51,7 +51,8 @@ wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VE
 wget -q https://raw.githubusercontent.com/NabuCasa/hass-nabucasa/$(get_version hass-nabucasa)/setup.py -O - | grep '[>=]=' | sed -E 's/\s*"(.*)",?/\1/' >> /tmp/ha_requirements.txt
 
 PYCOGNITO_VER=2022.01.0  # zero is required, incorrect version in github
-HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
+#HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
+HOMEASSISTANT_FRONTEND_VERSION="20220202.0"
 IPP_VER=$(get_version pyipp)
 PYTHON_MIIO_VER=$(get_version python-miio)
 AIODISCOVER_VER=$(get_version aiodiscover)
@@ -453,6 +454,7 @@ sed -i 's/"dhcp",//' default_config/manifest.json
 sed -i 's/"mobile_app",//' default_config/manifest.json
 sed -i 's/"updater",//' default_config/manifest.json
 sed -i 's/"usb",//' default_config/manifest.json
+sed -i 's/==[0-9\.]*//g' frontend/manifest.json
 
 cd ../..
 sed -i 's/    "/    # "/' homeassistant/generated/config_flows.py
