@@ -51,8 +51,7 @@ wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VE
 wget -q https://raw.githubusercontent.com/NabuCasa/hass-nabucasa/$(get_version hass-nabucasa)/setup.py -O - | grep '[>=]=' | sed -E 's/\s*"(.*)",?/\1/' >> /tmp/ha_requirements.txt
 
 PYCOGNITO_VER=2022.01.0  # zero is required, incorrect version in github
-#HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
-HOMEASSISTANT_FRONTEND_VERSION="20220202.0"
+HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
 IPP_VER=$(get_version pyipp)
 PYTHON_MIIO_VER=$(get_version python-miio)
 AIODISCOVER_VER=$(get_version aiodiscover)
@@ -78,6 +77,7 @@ opkg install \
 
 opkg install \
   patch \
+  unzip \
   python3-aiohttp \
   python3-aiohttp-cors \
   python3-async-timeout \
@@ -260,12 +260,12 @@ rm -rf hass-nabucasa-${NABUCASA_VER}.tar.gz hass-nabucasa-${NABUCASA_VER}
 
 # tmp might be small for frontend
 cd /root
-rm -rf home-assistant-frontend.tar.gz home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
+rm -rf home-assistant-frontend.zip home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
-rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/home_assistant_frontend-*.egg
-wget https://pypi.python.org/packages/source/h/home-assistant-frontend/home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}.tar.gz -O home-assistant-frontend.tar.gz
-tar -zxf home-assistant-frontend.tar.gz
-cd home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/home_assistant_frontend-*
+wget https://pypi.org/simple/home-assistant-frontend/ -O - | grep home_assistant_frontend-${HOMEASSISTANT_FRONTEND_VERSION}-py3 | cut -d '"' -f2 | xargs wget -O home-assistant-frontend.zip
+unzip -qqo home-assistant-frontend.zip -d home-assistant-frontend
+cd home-assistant-frontend
 find ./hass_frontend/frontend_es5 -name '*.js' -exec rm -rf {} \;
 find ./hass_frontend/frontend_es5 -name '*.map' -exec rm -rf {} \;
 find ./hass_frontend/frontend_es5 -name '*.txt' -exec rm -rf {} \;
@@ -282,11 +282,10 @@ gzip ./hass_frontend/static/translations/shopping_list/*
 
 find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 
-mv hass_frontend /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
-find . -type f -exec touch {} +
-python3 setup.py install
+mv hass_frontend /usr/lib/python${PYTHON_VERSION}/site-packages/
+mv home_assistant_frontend-${HOMEASSISTANT_FRONTEND_VERSION}.dist-info /usr/lib/python${PYTHON_VERSION}/site-packages/
 cd ..
-rm -rf home-assistant-frontend.tar.gz home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
+rm -rf home-assistant-frontend.zip home-assistant-frontend
 
 echo "Install HASS"
 cd /tmp
