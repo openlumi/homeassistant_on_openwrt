@@ -571,4 +571,6 @@ EOF
 chmod +x /etc/init.d/hass-configurator
 /etc/init.d/hass-configurator enable
 
+pip3 install --upgrade typing-extensions || true
+
 echo "Done."
