@@ -4,7 +4,7 @@
 set -e
 
 OPENWRT_VERSION=${OPENWRT_VERSION:-21.02}
-HOMEASSISTANT_MAJOR_VERSION="2022.2"
+HOMEASSISTANT_MAJOR_VERSION="2022.6"
 
 get_ha_version()
 {
@@ -78,6 +78,7 @@ opkg install \
 opkg install \
   patch \
   unzip \
+  libjpeg-turbo \
   python3-aiohttp \
   python3-aiohttp-cors \
   python3-async-timeout \
@@ -114,6 +115,7 @@ opkg install \
   python3-multiprocessing \
   python3-ncurses \
   python3-netifaces \
+  python3-numpy \
   python3-openssl \
   python3-pip \
   python3-pkg-resources \
@@ -288,6 +290,8 @@ cd ..
 rm -rf home-assistant-frontend.zip home-assistant-frontend
 
 echo "Install HASS"
+pip3 install --upgrade typing-extensions || true
+
 cd /tmp
 rm -rf homeassistant.tar.gz homeassistant-${HOMEASSISTANT_VERSION}
 wget https://pypi.python.org/packages/source/h/homeassistant/homeassistant-${HOMEASSISTANT_VERSION}.tar.gz -O homeassistant.tar.gz
@@ -295,6 +299,7 @@ tar -zxf homeassistant.tar.gz
 rm -rf homeassistant.tar.gz
 cd homeassistant-${HOMEASSISTANT_VERSION}/homeassistant/
 echo '' > requirements.txt
+sed -i "s/[>=]=.*//g" package_constraints.txt
 
 mv components components-orig
 mkdir components
@@ -307,8 +312,10 @@ mv \
   alexa \
   analytics \
   api \
+  application_credentials \
   auth \
   automation \
+  backup \
   binary_sensor \
   blueprint \
   brother \
@@ -369,7 +376,9 @@ mv \
   panel_iframe \
   persistent_notification \
   person \
+  proximity \
   python_script \
+  radio_browser \
   recorder \
   remote \
   rest \
@@ -395,7 +404,6 @@ mv \
   timer \
   trace \
   tts \
-  updater \
   upnp \
   usb \
   vacuum \
@@ -422,6 +430,12 @@ cd components
 # serve static with gzipped files
 sed -i 's/filepath = self._directory.joinpath(filename).resolve()/try:\n                filepath = self._directory.joinpath(Path(rel_url + ".gz")).resolve()\n                if not filepath.exists():\n                    raise FileNotFoundError()\n            except Exception as e:\n                filepath = self._directory.joinpath(filename).resolve()/' http/static.py
 
+# replace LRU with simple dict
+sed -i 's/from lru import LRU/#/' recorder/core.py
+sed -i 's/: LRU.*/: dict = {}/' recorder/core.py
+sed -i 's/, "lru-dict==[0-9\.]*"//' recorder/manifest.json
+
+# relax dependencies
 sed -i 's/sqlalchemy==[0-9\.]*/sqlalchemy/' recorder/manifest.json
 sed -i 's/pillow==[0-9\.]*/pillow/' image/manifest.json
 sed -i 's/, UnidentifiedImageError//' image/__init__.py
@@ -456,10 +470,12 @@ sed -i 's/"usb",//' default_config/manifest.json
 sed -i 's/==[0-9\.]*//g' frontend/manifest.json
 
 cd ../..
-sed -i 's/    "/    # "/' homeassistant/generated/config_flows.py
+# integrations and helper sections leave as is, only nested items
+sed -i 's/        "/        # "/' homeassistant/generated/config_flows.py
 sed -i 's/    # "mqtt"/    "mqtt"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "esphome"/    "esphome"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "met"/    "met"/' homeassistant/generated/config_flows.py
+sed -i 's/    # "radio_browser"/    "radio_browser"/' homeassistant/generated/config_flows.py
 if [ $LUMI_GATEWAY ]; then
   sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
 fi
@@ -475,26 +491,20 @@ sed -i 's/_disabled_miio./_miio./' homeassistant/generated/zeroconf.py
 
 # backport jinja2<3.0 decorator
 sed -i 's/from jinja2 import contextfunction, pass_context/from jinja2 import contextfunction, contextfilter as pass_context/' homeassistant/helpers/template.py
-# backport async_timout.timeout
-sed -i  's/def timeout(/timeout = async_timeout.timeout\n\ndef timeout1(/' homeassistant/async_timeout_backcompat.py || true
 
 sed -i 's/"installation_type": "Unknown"/"installation_type": "Home Assistant on OpenWrt"/' homeassistant/helpers/system_info.py
-sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
-sed -i 's/defusedxml==[0-9\.]*//' homeassistant/package_constraints.txt
-
-if [ "${OPENWRT_VERSION}" == "19.07" ]; then
-  # downgrade using python 3.8 to be compatible with 3.7
-  sed -i 's/REQUIRED_PYTHON_VER = \(3, [0-9], [0-9]\)/REQUIRED_PYTHON_VER = \(3, 7, 0\)/' homeassistant/const.py
-  wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/downgrade_python/ha_py37.patch -O /tmp/ha_py37.patch
-  patch -p1 < /tmp/ha_py37.patch
-  rm -rf /tmp/ha_py37.patch
-fi
-
 find . -type f -exec touch {} +
 sed -i "s/[>=]=.*//g" setup.cfg
 
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/homeassistant-*.egg
-python3 setup.py install
+
+if [ ! -f setup.py ]; then
+  sed -i 's/install_requires=REQUIRES/install_requires=[]/' homeassistant/setup.py
+  python3 -m pip install .
+else
+  sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
+  python3  setup.py install
+fi
 cd ../
 rm -rf homeassistant-${HOMEASSISTANT_VERSION}/
 
@@ -513,8 +523,16 @@ tts:
     language: ru
 
 recorder:
-  purge_keep_days: 2
-  db_url: 'sqlite:///:memory:'
+  purge_keep_days: 1
+  db_url: 'sqlite:////tmp/homeassistant.db'
+  include:
+    entity_globs:
+      - sensor.illuminance_*
+      - sensor.btn0_*
+      - sensor.temperature_*
+      - sensor.humidity_*
+      - sensor.presence_*
+      - light.*
 
 panel_iframe:
   configurator:
@@ -570,7 +588,5 @@ start_service()
 EOF
 chmod +x /etc/init.d/hass-configurator
 /etc/init.d/hass-configurator enable
-
-pip3 install --upgrade typing-extensions || true
 
 echo "Done."
