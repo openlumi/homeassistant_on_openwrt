@@ -150,6 +150,11 @@ mkdir -p /usr/lib/python${PYTHON_VERSION}/site-packages/_distutils_hack
 wget https://raw.githubusercontent.com/pypa/setuptools/v56.0.0/_distutils_hack/__init__.py -O /usr/lib/python${PYTHON_VERSION}/site-packages/_distutils_hack/__init__.py
 wget https://raw.githubusercontent.com/pypa/setuptools/v56.0.0/_distutils_hack/override.py -O /usr/lib/python${PYTHON_VERSION}/site-packages/_distutils_hack/override.py
 
+rm -rf /etc/homeassistant/deps/
+find /usr/lib/python${PYTHON_VERSION}/site-packages/ | grep -E "/__pycache__$" | xargs rm -rf
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/botocore/docs
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/botocore/data
+
 echo "Install base requirements from PyPI..."
 pip3 install wheel
 cat << EOF > /tmp/requirements.txt
@@ -267,6 +272,7 @@ rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/home_assistant_frontend-*
 wget https://pypi.org/simple/home-assistant-frontend/ -O - | grep home_assistant_frontend-${HOMEASSISTANT_FRONTEND_VERSION}-py3 | cut -d '"' -f2 | xargs wget -O home-assistant-frontend.zip
 unzip -qqo home-assistant-frontend.zip -d home-assistant-frontend
+rm -rf home-assistant-frontend.zip
 cd home-assistant-frontend
 find ./hass_frontend/frontend_es5 -name '*.js' -exec rm -rf {} \;
 find ./hass_frontend/frontend_es5 -name '*.map' -exec rm -rf {} \;
@@ -287,7 +293,7 @@ find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
 mv hass_frontend /usr/lib/python${PYTHON_VERSION}/site-packages/
 mv home_assistant_frontend-${HOMEASSISTANT_FRONTEND_VERSION}.dist-info /usr/lib/python${PYTHON_VERSION}/site-packages/
 cd ..
-rm -rf home-assistant-frontend.zip home-assistant-frontend
+rm -rf home-assistant-frontend
 
 echo "Install HASS"
 pip3 install --upgrade typing-extensions || true
