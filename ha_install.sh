@@ -4,7 +4,8 @@
 set -e
 
 OPENWRT_VERSION=${OPENWRT_VERSION:-21.02}
-HOMEASSISTANT_MAJOR_VERSION="2022.6"
+HOMEASSISTANT_MAJOR_VERSION="2022.7"
+export PIP_DEFAULT_TIMEOUT=100
 
 get_ha_version()
 {
@@ -152,7 +153,6 @@ wget https://raw.githubusercontent.com/pypa/setuptools/v56.0.0/_distutils_hack/o
 
 rm -rf /etc/homeassistant/deps/
 find /usr/lib/python${PYTHON_VERSION}/site-packages/ | grep -E "/__pycache__$" | xargs rm -rf
-rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/botocore/docs
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/botocore/data
 
 echo "Install base requirements from PyPI..."
@@ -160,7 +160,7 @@ pip3 install wheel
 cat << EOF > /tmp/requirements.txt
 tzdata==2021.2.post0  # 2021.6+ requirement
 
-$(version atomicwrites)  # nabucasa dep
+$(version atomicwrites-homeassistant)  # nabucasa dep
 $(version snitun)  # nabucasa dep
 $(version astral)
 $(version awesomeversion)
@@ -171,6 +171,7 @@ $(version sqlalchemy)  # recorder requirement
 
 # homeassistant manifest requirements
 $(version async-upnp-client)
+$(version fnvhash)
 $(version PyQRCode)
 $(version pyMetno)
 $(version mutagen)
@@ -197,6 +198,9 @@ EOF
 fi
 
 pip3 install -r /tmp/requirements.txt
+
+# patch async_upnp_client to support older aiohttp
+sed -i 's/CIMultiDictProxy\[str\]/CIMultiDictProxy/' /usr/lib/python${PYTHON_VERSION}/site-packages/async_upnp_client/ssdp.py
 
 if [ $LUMI_GATEWAY ]; then
   # show internal serial ports for Xiaomi Gateway
@@ -299,7 +303,7 @@ echo "Install HASS"
 pip3 install --upgrade typing-extensions || true
 
 cd /tmp
-rm -rf homeassistant.tar.gz homeassistant-${HOMEASSISTANT_VERSION}
+rm -rf homeassistant.tar.gz homeassistant-${HOMEASSISTANT_VERSION} .cache pip-*
 wget https://pypi.python.org/packages/source/h/homeassistant/homeassistant-${HOMEASSISTANT_VERSION}.tar.gz -O homeassistant.tar.gz
 tar -zxf homeassistant.tar.gz
 rm -rf homeassistant.tar.gz
@@ -498,14 +502,24 @@ sed -i 's/_disabled_miio./_miio./' homeassistant/generated/zeroconf.py
 # backport jinja2<3.0 decorator
 sed -i 's/from jinja2 import contextfunction, pass_context/from jinja2 import contextfunction, contextfilter as pass_context/' homeassistant/helpers/template.py
 
+# backport orjson to classic json
+# helpers
+sed -i -e 's/orjson/json/' -e 's/.decode(.*)//' -e 's/option=.*,/\n/' -e 's/.as_posix/.as_posix()\n    if isinstance(obj, (datetime.date, datetime.time)):\n        return obj.isoformat/' -e 's/json_bytes/json_bytes_old/' homeassistant/helpers/json.py
+echo 'def json_bytes(data): return json.dumps(data, default=json_encoder_default).encode("utf-8")' >> homeassistant/helpers/json.py
+# util
+sed -i -e 's/orjson/json/' -e 's/.decode(.*)//' -e 's/option=.*/\n/' homeassistant/util/json.py
+# aiohttp_client.py
+sed -i -e 's/orjson/json/' -e 's/.decode(.*)//' homeassistant/helpers/aiohttp_client.py
+
+# Patch installation type
 sed -i 's/"installation_type": "Unknown"/"installation_type": "Home Assistant on OpenWrt"/' homeassistant/helpers/system_info.py
 find . -type f -exec touch {} +
 sed -i "s/[>=]=.*//g" setup.cfg
 
-rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/homeassistant-*.egg
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/homeassistant*
 
 if [ ! -f setup.py ]; then
-  sed -i 's/install_requires=REQUIRES/install_requires=[]/' homeassistant/setup.py
+  awk -v RS='dependencies[ ]*=.*?\n\]' -v ORS= '1;NR==1{printf "dependencies = []"}' pyproject.toml > pyproject-new.toml && mv pyproject-new.toml pyproject.toml
   python3 -m pip install .
 else
   sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
