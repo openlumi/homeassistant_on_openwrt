@@ -116,7 +116,6 @@ opkg install \
   python3-multiprocessing \
   python3-ncurses \
   python3-netifaces \
-  python3-numpy \
   python3-openssl \
   python3-pip \
   python3-pkg-resources \
@@ -143,6 +142,8 @@ opkg install \
 
 # openwrt master doesn't have this package
 opkg install python3-gdbm || true
+# numpy requires hard floating point support and is missing on some MIPS architectures
+opkg install python3-numpy  || true
 
 cd /tmp/
 
