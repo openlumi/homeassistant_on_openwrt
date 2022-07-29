@@ -4,7 +4,7 @@
 set -e
 
 OPENWRT_VERSION=${OPENWRT_VERSION:-21.02}
-HOMEASSISTANT_MAJOR_VERSION="2022.7"
+HOMEASSISTANT_MAJOR_VERSION="2022.8"
 export PIP_DEFAULT_TIMEOUT=100
 
 get_ha_version()
@@ -290,10 +290,12 @@ find ./hass_frontend/static/mdi -name '*.json' -maxdepth 1 -exec rm -rf {} \;
 find ./hass_frontend/static/polyfills -name '*.js' -maxdepth 1 -exec rm -rf {} \;
 find ./hass_frontend/static/polyfills -name '*.map' -maxdepth 1 -exec rm -rf {} \;
 
-# shopping list and calendar missing gzipped
-gzip ./hass_frontend/static/translations/shopping_list/*
-
-find ./hass_frontend/static/translations -name '*.json' -exec rm -rf {} \;
+# gzip all translations (and that removes unarchived files)
+for subdir in ./hass_frontend/static/translations/*; do
+  if [ -d $subdir ]; then
+    gzip -f $subdir/*.json
+  fi
+done
 
 mv hass_frontend /usr/lib/python${PYTHON_VERSION}/site-packages/
 mv home_assistant_frontend-${HOMEASSISTANT_FRONTEND_VERSION}.dist-info /usr/lib/python${PYTHON_VERSION}/site-packages/
@@ -329,6 +331,7 @@ mv \
   backup \
   binary_sensor \
   blueprint \
+  bluetooth \
   brother \
   button \
   camera \
@@ -354,6 +357,7 @@ mv \
   hassio \
   history \
   homeassistant \
+  homeassistant_alerts \
   http \
   humidifier \
   image \
@@ -392,6 +396,7 @@ mv \
   radio_browser \
   recorder \
   remote \
+  repairs \
   rest \
   safe_mode \
   scene \
@@ -439,12 +444,14 @@ rm -rf components-orig
 cd components
 
 # serve static with gzipped files
-sed -i 's/filepath = self._directory.joinpath(filename).resolve()/try:\n                filepath = self._directory.joinpath(Path(rel_url + ".gz")).resolve()\n                if not filepath.exists():\n                    raise FileNotFoundError()\n            except Exception as e:\n                filepath = self._directory.joinpath(filename).resolve()/' http/static.py
+sed -i 's/^\( *\)filepath = \(.*\).joinpath(filename).resolve()/\1try:\n\1    filepath = \2.joinpath(Path(str(filename) + ".gz")).resolve()\n\1    if not filepath.exists():\n\1        raise FileNotFoundError()\n\1except Exception as e:\n\1    filepath = \2.joinpath(filename).resolve()/' http/static.py
 
 # replace LRU with simple dict
 sed -i 's/from lru import LRU/#/' recorder/core.py
 sed -i 's/: LRU.*/: dict = {}/' recorder/core.py
 sed -i 's/, "lru-dict==[0-9\.]*"//' recorder/manifest.json
+sed -i 's/from lru import LRU/#/' http/static.py
+sed -i 's/ LRU.*/ {}/' http/static.py
 
 # relax dependencies
 sed -i 's/sqlalchemy==[0-9\.]*/sqlalchemy/' recorder/manifest.json
@@ -478,6 +485,7 @@ sed -i 's/"dhcp",//' default_config/manifest.json
 sed -i 's/"mobile_app",//' default_config/manifest.json
 sed -i 's/"updater",//' default_config/manifest.json
 sed -i 's/"usb",//' default_config/manifest.json
+sed -i 's/"bluetooth",//' default_config/manifest.json
 sed -i 's/==[0-9\.]*//g' frontend/manifest.json
 
 cd ../..
@@ -499,6 +507,9 @@ sed -i 's/_disabled_ipps./_ipps./' homeassistant/generated/zeroconf.py
 sed -i 's/_disabled_ipp./_ipp./' homeassistant/generated/zeroconf.py
 sed -i 's/_disabled_printer./_printer./' homeassistant/generated/zeroconf.py
 sed -i 's/_disabled_miio./_miio./' homeassistant/generated/zeroconf.py
+
+# disabling all supported_brands
+sed -i 's/^    /    # /' homeassistant/generated/supported_brands.py
 
 # backport jinja2<3.0 decorator
 sed -i 's/from jinja2 import contextfunction, pass_context/from jinja2 import contextfunction, contextfilter as pass_context/' homeassistant/helpers/template.py
