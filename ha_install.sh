@@ -194,7 +194,7 @@ if [ $LUMI_GATEWAY ]; then
 $(version pyserial)
 $(version zha-quirks)
 $(version zigpy)
-https://github.com/zigpy/zigpy-zigate/archive/efc0c3cba3b0aa77a37f9b2d2b3eaa03266f32da.zip  # include raw mode support
+https://github.com/zigpy/zigpy-zigate/archive/6f4c943b68b83fca2f5b1103df892acf9efed13f.zip  # include raw mode support
 EOF
 fi
 
@@ -477,6 +477,8 @@ if [ $LUMI_GATEWAY ]; then
   sed -i 's/import zigpy_deconz.zigbee.application//' zha/core/const.py
   sed -i 's/import zigpy_xbee.zigbee.application//' zha/core/const.py
   sed -i 's/import zigpy_znp.zigbee.application//' zha/core/const.py
+  sed -i -E 's/"(bellows|zigpy_deconz|zigpy_xbee|zigpy_znp)":/# "\1":/' zha/diagnostics.py
+  sed -i -E 's/import (bellows|zigpy_deconz|zigpy_xbee|zigpy_znp)/# import \1/' zha/diagnostics.py
   sed -i -e '/znp = (/,/)/d' -e '/ezsp = (/,/)/d' -e '/deconz = (/,/)/d' -e '/ti_cc = (/,/)/d' -e '/xbee = (/,/)/d' zha/core/const.py
 fi
 
