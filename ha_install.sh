@@ -337,6 +337,7 @@ mv \
   camera \
   climate \
   cloud \
+  command_line \
   config \
   counter \
   cover \
@@ -410,6 +411,7 @@ mv \
   stream \
   sun \
   switch \
+  switch_as_x \
   system_health \
   system_log \
   tag \
