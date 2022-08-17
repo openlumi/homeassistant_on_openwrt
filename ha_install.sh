@@ -194,7 +194,7 @@ if [ $LUMI_GATEWAY ]; then
 $(version pyserial)
 $(version zha-quirks)
 $(version zigpy)
-https://github.com/zigpy/zigpy-zigate/archive/6f4c943b68b83fca2f5b1103df892acf9efed13f.zip  # include raw mode support
+$(version zigpy-zigate)
 EOF
 fi
 
