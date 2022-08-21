@@ -532,6 +532,9 @@ sed -i 's/"installation_type": "Unknown"/"installation_type": "Home Assistant on
 find . -type f -exec touch {} +
 sed -i "s/[>=]=.*//g" setup.cfg
 
+# Patch async_timeout usage
+sed -i 's/to_context.deadline/hasattr(to_context, "deadline") and \0/' homeassistant/helpers/script.py
+
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/homeassistant*
 
 if [ ! -f setup.py ]; then
