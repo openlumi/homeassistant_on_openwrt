@@ -45,6 +45,8 @@ is_lumi_gateway()
   ls -1 /dev/ttymxc1 2>/dev/null || echo ''
 }
 
+function int_version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+
 wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/homeassistant/package_constraints.txt -O - > /tmp/ha_requirements.txt
 wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements.txt -O - >> /tmp/ha_requirements.txt
 wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements_all.txt -O - >> /tmp/ha_requirements.txt
@@ -536,6 +538,10 @@ sed -i "s/[>=]=.*//g" setup.cfg
 sed -i 's/to_context.deadline/hasattr(to_context, "deadline") and \0/' homeassistant/helpers/script.py
 
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/homeassistant*
+
+if [ $(int_version ${PYTHON_VERSION}) -ge $(int_version '3.10') ]; then
+  wget https://raw.githubusercontent.com/pypa/pip/22.3.1/src/pip/__pip-runner__.py -O /usr/lib/python${PYTHON_VERSION}/site-packages/pip/__pip-runner__.py
+fi
 
 if [ ! -f setup.py ]; then
   awk -v RS='dependencies[ ]*=.*?\n\]' -v ORS= '1;NR==1{printf "dependencies = []"}' pyproject.toml > pyproject-new.toml && mv pyproject-new.toml pyproject.toml
