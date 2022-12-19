@@ -334,7 +334,6 @@ automation
 backup
 binary_sensor
 blueprint
-bluetooth
 brother
 button
 camera
@@ -482,6 +481,13 @@ sed -i 's/netdisco==[0-9\.]*/netdisco/' discovery/manifest.json
 sed -i 's/PyNaCl==[0-9\.]*/PyNaCl/' mobile_app/manifest.json
 sed -i 's/defusedxml==[0-9\.]*/defusedxml/' ssdp/manifest.json
 sed -i 's/netdisco==[0-9\.]*/netdisco/' ssdp/manifest.json
+
+# remove bluetooth support from esphome
+sed -i 's/"bluetooth",//' esphome/manifest.json
+sed -i -e 's/if config_entry.unique_id/if False/' -e 's/from homeassistant.components.bluetooth/#from homeassistant.components.bluetooth/' -e 's/async_scanner_by_source//' esphome/diagnostics.py
+sed -i 's/from.*BleakGATTServiceCollection.*/BleakGATTServiceCollection = None/' esphome/entry_data.py
+sed -i -e 's/if entry_data.device_info.bluetooth_proxy_version/if False/' -e 's/from \.bluetooth/#/' -e 's/await async_connect_scanner//' esphome/__init__.py
+
 
 if [ $LUMI_GATEWAY ]; then
   # remove unwanted zha requirements
