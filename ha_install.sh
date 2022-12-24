@@ -382,6 +382,7 @@ map
 media_player
 media_source
 met
+min_max
 mobile_app
 mpd
 mqtt
@@ -421,11 +422,13 @@ tag
 telegram
 telegram_bot
 template
+text
 time_date
 timer
 trace
 tts
 upnp
+update
 usb
 vacuum
 wake_on_lan
@@ -487,6 +490,9 @@ sed -i 's/"bluetooth",//' esphome/manifest.json
 sed -i -e 's/if config_entry.unique_id/if False/' -e 's/from homeassistant.components.bluetooth/#from homeassistant.components.bluetooth/' -e 's/async_scanner_by_source//' esphome/diagnostics.py
 sed -i 's/from.*BleakGATTServiceCollection.*/BleakGATTServiceCollection = None/' esphome/entry_data.py
 sed -i -e 's/if entry_data.device_info.bluetooth_proxy_version/if False/' -e 's/from \.bluetooth/#/' -e 's/await async_connect_scanner//' esphome/__init__.py
+
+# Patch mqtt component in 2022.12
+sed -i -e 's/import mqtt/\0\nfrom .util import */g' -e 's/mqtt\.util\.//' mqtt/trigger.py
 
 
 if [ $LUMI_GATEWAY ]; then
