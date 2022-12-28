@@ -121,6 +121,7 @@ opkg install \
   python3-pip \
   python3-pkg-resources \
   python3-ply \
+  python3-pycares \
   python3-pycparser \
   python3-pydoc \
   python3-pyopenssl \
@@ -171,6 +172,7 @@ pip3 install --no-cache-dir --no-deps -r /tmp/requirements_nodeps.txt
 grep 'zeroconf' /tmp/freeze.txt >> /tmp/owrt_constraints.txt
 
 sed -i 's/async-timeout (>=.*)/async-timeout (>=3.0.0)/' /usr/lib/python${PYTHON_VERSION}/site-packages/zeroconf-*.dist-info/METADATA
+sed -i 's/async-timeout (>=.*)/async-timeout (>=3.0.0)/' /usr/lib/python${PYTHON_VERSION}/site-packages/aioesphomeapi-*.dist-info/METADATA
 
 cat << EOF > /tmp/requirements.txt
 tzdata==2021.2.post0  # 2021.6+ requirement
@@ -198,6 +200,10 @@ $(version pyudev)  # usb
 
 # fixed dependencies
 python-jose[cryptography]==3.2.0  # (pycognito dep) 3.3.0 is not compatible with the python3-cryptography in the feed
+
+# aioesphomeapi dependencies
+noiseprotocol
+protobuf
 
 # extra services
 hass-configurator==0.4.1
@@ -372,6 +378,7 @@ input_datetime
 input_number
 input_select
 input_text
+integration
 light
 lock
 logbook
