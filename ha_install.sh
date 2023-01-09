@@ -121,7 +121,6 @@ opkg install \
   python3-pip \
   python3-pkg-resources \
   python3-ply \
-  python3-pycares \
   python3-pycparser \
   python3-pydoc \
   python3-pyopenssl \
@@ -143,9 +142,11 @@ opkg install \
   python3-slugify
 
 # openwrt master doesn't have this package
-opkg install python3-gdbm || true
+opkg install python3-gdbm 2>/dev/null || true
+# openwrt < 22.03 doesn't have this package
+opkg install python3-pycares 2>/dev/null || true
 # numpy requires hard floating point support and is missing on some MIPS architectures
-opkg install python3-numpy  || true
+opkg install python3-numpy 2>/dev/null || true
 
 cd /tmp/
 
