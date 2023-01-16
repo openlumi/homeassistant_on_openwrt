@@ -37,9 +37,9 @@ requirement versions or python libraries.
 
 The component uses internal UART to communicate with ZigBee chip.
 The chip has to be flashed with a proper firmware to be able to 
-communicate with the HA. The recommended firmware is v3.21:
+communicate with the HA. The recommended firmware is v3.23:
 
-https://github.com/openlumi/ZiGate/releases/download/990c--20220102-2320/ZigbeeNodeControlBridge_JN5169_COORDINATOR_115200.bin
+https://github.com/openlumi/ZiGate/releases/download/55f8--20230114-1835/ZigbeeNodeControlBridge_JN5169_COORDINATOR_115200.bin 
 
 You could try another Zigate firmwares for JN5169 chip. The baud rate
 must be 115200 as it is hardcoded in zigpy-zigate.
