@@ -25,7 +25,7 @@ echo "=========================================="
 
 get_python_version()
 {
-  opkg list | grep python3-base | head -n 1 | grep -Eo '\d+\.\d+'
+  opkg list | grep python3-base | head -n 1 | grep -Eo '[[:digit:]]+\.[[:digit:]]+'
 }
 
 get_version()
