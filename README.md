@@ -1,7 +1,7 @@
 # Homeassistant on OpenWrt
 
-This repo provides tools to install the latest version of Home Assistant. (2022.12.x)
-on a system with OpenWrt 21.02+ installed. It provides the reduced version of HA with only minimal list of components 
+This repo provides tools to install the latest version of Home Assistant. (2023.12.x)
+on a system with OpenWrt 23.05+ installed. It provides the reduced version of HA with only minimal list of components 
 included. Additionally, it keeps MQTT, ESPHome, and ZHA components as they are 
 widely used with smart home solutions.
 
@@ -9,14 +9,14 @@ It is distributed with a shell script that downloads and installs everything tha
 
 ### Requirements:
 - 256 MB storage space
-- 128 MB RAM
-- OpenWrt 21.02.0 or newer installed
+- 256 MB RAM
+- OpenWrt 23.05.0 or newer installed
 
 ## Generic installation
 Then, download the installer and run it.
 
 ```sh
-wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/21.02/ha_install.sh -O - | sh
+wget https://raw.githubusercontent.com/openlumi/homeassistant_on_openwrt/23.05/ha_install.sh -O - | sh
 ```
 
 After script prints `Done.` you have Home Assistant installed. 
@@ -67,12 +67,12 @@ restarted.**
 
 You may want to add more components to your HA installation.
 In this case you have to download tar.gz from PyPI:
-https://pypi.org/project/homeassistant/2022.12.0/#files
+https://pypi.org/project/homeassistant/2023.12.0/#files
 Then extract the content and copy the required components to 
-`/usr/lib/python3.9/site-packages/homeassistant/components`
+`/usr/lib/python3.11/site-packages/homeassistant/components`
 If the component uses the frontend wizard, you may want to uncomment the
 corresponding line in 
-`/usr/lib/python3.9/site-packages/homeassistant/generated/config_flows.py`
+`/usr/lib/python3.11/site-packages/homeassistant/generated/config_flows.py`
 also.
 
 Or you can create `custom_components` directory in `/etc/homeassistant` and
