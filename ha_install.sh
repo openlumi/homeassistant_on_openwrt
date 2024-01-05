@@ -3,7 +3,7 @@
 
 set -e
 
-HOMEASSISTANT_MAJOR_VERSION="2023.12"
+HOMEASSISTANT_MAJOR_VERSION="2024.1"
 export PIP_DEFAULT_TIMEOUT=100
 
 get_ha_version()
@@ -190,7 +190,6 @@ $(version psutil-home-assistant)
 #$(version aiohttp-zlib-ng)
 
 # homeassistant manifest requirements
-$(version async-upnp-client)
 $(version PyQRCode)
 $(version pyMetno)
 $(version mutagen)
@@ -209,6 +208,7 @@ $(version httpx)  # image/http
 python-jose[cryptography]==3.2.0  # (pycognito dep) 3.3.0 is not compatible with the python3-cryptography in the feed
 fnvhash==0.1.0  # replacement for fnv-hash-fast in recorder
 radios==0.1.1  # radio_browser, newer versions require orjson
+async-upnp-client==0.36.2  # 0.38 requires aiohttp>=3.9
 
 # aioesphomeapi dependencies
 noiseprotocol
@@ -258,6 +258,9 @@ rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_nabucasa-*.egg
 pip3 install . --no-cache-dir -c /tmp/owrt_constraints.txt
 cd ..
 rm -rf hass-nabucasa-${NABUCASA_VER}.tar.gz hass-nabucasa-${NABUCASA_VER}
+
+# cleanup
+find /usr/lib/python${PYTHON_VERSION}/site-packages -iname tests | xargs rm -rf
 
 # tmp might be small for frontend
 cd ${STORAGE_TMP}
@@ -416,6 +419,7 @@ update
 upnp
 usb
 vacuum
+valve
 wake_on_lan
 water_heater
 weather
@@ -481,6 +485,11 @@ sed -i 's/PyNaCl==[0-9\.]*/PyNaCl/i' mobile_app/manifest.json
 sed -i 's/defusedxml==[0-9\.]*/defusedxml/i' ssdp/manifest.json
 sed -i 's/netdisco==[0-9\.]*/netdisco/i' ssdp/manifest.json
 sed -i 's/radios==[0-9\.]*/radios/i' radio_browser/manifest.json
+
+# relax async-upnp-client versions
+sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' yeelight/manifest.json
+sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' upnp/manifest.json
+sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' ssdp/manifest.json
 
 # remove bluetooth support from esphome
 sed -i 's/"bluetooth",//' esphome/manifest.json
@@ -577,7 +586,7 @@ sed -i -e 's/from aiohttp_zlib_ng/#from aiohttp_zlib_ng/' -e 's/enable_zlib_ng/#
 
 # fix for aiohttp < 3.9 (3.8.5 in 23.05)
 # TODO: revert https://github.com/home-assistant/core/pull/104175
-sed -i 's/, handler_cancellation=True/)  # \0/' homeassistant/components/http/__init__.py
+sed -i 's/, handler_cancellation=True/,  # \0/' homeassistant/components/http/__init__.py
 
 # Patch installation type
 sed -i 's/"installation_type": "Unknown"/"installation_type": "Home Assistant on OpenWrt"/' homeassistant/helpers/system_info.py
@@ -592,9 +601,12 @@ if [ ! -f setup.py ]; then
 else
   sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
 fi
+HA_BUILD=${STORAGE_TMP}/ha-build
+mkdir -p ${HA_BUILD}
+ln -s ${HA_BUILD} ./build
 TMPDIR=${STORAGE_TMP} pip3 install . --no-cache-dir -c /tmp/owrt_constraints.txt
 cd ../
-rm -rf homeassistant-${HOMEASSISTANT_VERSION}/
+rm -rf homeassistant-${HOMEASSISTANT_VERSION}/ ${HA_BUILD} ${STORAGE_TMP}
 
 IP=$(ip a | grep "inet " | cut -d " " -f6 | tail -1 | cut -d / -f1)
 
