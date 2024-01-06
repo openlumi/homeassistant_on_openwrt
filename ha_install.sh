@@ -163,6 +163,7 @@ grep -E 'aiohttp|async-timeout|crypto|YAML' /tmp/freeze.txt > /tmp/owrt_constrai
 
 cat << EOF > /tmp/requirements_nodeps.txt
 $(version aioesphomeapi)
+$(version esphome-dashboard-api)
 $(version zeroconf)
 EOF
 
@@ -203,6 +204,8 @@ $(version python-miio)  # xiaomi_miio
 $(version PyXiaomiGateway)
 $(version aiodiscover)  # dhcp
 $(version httpx)  # image/http
+$(version hassil)  # conversation
+$(version home-assistant-intents)  # conversation
 
 # fixed dependencies
 python-jose[cryptography]==3.2.0  # (pycognito dep) 3.3.0 is not compatible with the python3-cryptography in the feed
@@ -312,6 +315,7 @@ alexa
 analytics
 api
 application_credentials
+assist_pipeline
 auth
 automation
 backup
@@ -325,6 +329,7 @@ climate
 cloud
 command_line
 config
+conversation
 counter
 cover
 default_config
@@ -359,6 +364,7 @@ input_number
 input_select
 input_text
 integration
+intent
 lawn_mower
 light
 lock
@@ -397,9 +403,11 @@ script
 search
 select
 sensor
+shopping_list
 siren
 ssdp
 stream
+stt
 sun
 switch
 switch_as_x
@@ -421,6 +429,7 @@ usb
 vacuum
 valve
 wake_on_lan
+wake_word
 water_heater
 weather
 webhook
@@ -457,7 +466,7 @@ echo '' > requirements.txt
 sed -i "s/[>=]=.*//g" package_constraints.txt
 
 # replace LRU with simple dict
-sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' helpers/template.py
+sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' helpers/template.py
 
 cd components
 
@@ -468,9 +477,9 @@ sed -i -E 's/^( *)headers=\{/\0\n\1    **({hdrs.CONTENT_ENCODING: "gzip"} if fil
 # replace LRU with simple dict
 sed -i 's/, "lru-dict==[0-9\.]*"//' recorder/manifest.json
 sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/core.py
-sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' recorder/table_managers/__init__.py
 sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/table_managers/event_types.py
-sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' recorder/table_managers/statistics_meta.py
+sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/__init__.py
+sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/statistics_meta.py
 sed -i 's/from lru import LRU/LRU = lambda x: dict()/' http/static.py
 sed -i 's/from lru import LRU/LRU = lambda x: dict()/' esphome/entry_data.py
 
@@ -485,6 +494,7 @@ sed -i 's/PyNaCl==[0-9\.]*/PyNaCl/i' mobile_app/manifest.json
 sed -i 's/defusedxml==[0-9\.]*/defusedxml/i' ssdp/manifest.json
 sed -i 's/netdisco==[0-9\.]*/netdisco/i' ssdp/manifest.json
 sed -i 's/radios==[0-9\.]*/radios/i' radio_browser/manifest.json
+sed -i 's/"webrtc-noise-gain==[0-9\.]*"//i' assist_pipeline/manifest.json
 
 # relax async-upnp-client versions
 sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' yeelight/manifest.json
@@ -492,10 +502,12 @@ sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' upnp/manifest.json
 sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' ssdp/manifest.json
 
 # remove bluetooth support from esphome
-sed -i 's/"bluetooth",//' esphome/manifest.json
-sed -i -e 's/if config_entry.unique_id/if False/' -e 's/from homeassistant.components.bluetooth/#from homeassistant.components.bluetooth/' -e 's/async_scanner_by_source//' esphome/diagnostics.py
-sed -i 's/from.*BleakGATTServiceCollection.*/BleakGATTServiceCollection = None/' esphome/entry_data.py
-sed -i -e 's/if entry_data.device_info.bluetooth_proxy_version/if False/' -e 's/from \.bluetooth/#/' -e 's/await async_connect_scanner//' esphome/__init__.py
+cat esphome/manifest.json | tr '\n' '\r' | sed -E -e 's/, "bluetooth"//g' -e 's/(, )?"bleak[-_]esphome"//' -e 's/,\r    "bleak-esphome==[0-9.]*"//g' | tr '\r' '\n' > esphome/manifest-new.json
+mv esphome/manifest-new.json esphome/manifest.json
+sed -i -e 's/    config_entry.unique_id/    False/' -e 's/from homeassistant.components.bluetooth/#from homeassistant.components.bluetooth/' -e 's/async_scanner_by_source//' esphome/diagnostics.py
+sed -i 's/from.*ESPHomeBluetoothDevice.*/ESPHomeBluetoothDevice = None/' esphome/entry_data.py
+sed -i 's/from.*ESPHomeBluetoothCache.*/ESPHomeBluetoothCache = dict/' esphome/domain_data.py
+sed -i -E 's/from.*async_connect_scanner.*/async def async_connect_scanner(*args, **kwargs): pass/' esphome/manager.py
 
 # Patch mqtt component in 2022.12
 sed -i -e 's/import mqtt/\0\nfrom .util import */g' -e 's/mqtt\.util\.//' mqtt/trigger.py
@@ -541,7 +553,6 @@ sed -i 's/"updater",//' default_config/manifest.json
 sed -i 's/"usb",//' default_config/manifest.json
 sed -i 's/"bluetooth",//' default_config/manifest.json
 sed -i 's/"assist_pipeline",//' default_config/manifest.json
-sed -i 's/"conversation",//' default_config/manifest.json
 sed -i 's/"stream",//' default_config/manifest.json
 sed -i 's/==[0-9\.]*//g' frontend/manifest.json
 
