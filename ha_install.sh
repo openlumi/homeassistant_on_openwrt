@@ -367,6 +367,7 @@ integration
 intent
 lawn_mower
 light
+local_todo
 lock
 logbook
 logger
@@ -532,18 +533,25 @@ if [ $LUMI_GATEWAY ]; then
   sed -i 's/"zigpy-cc==[0-9\.]*",//i' zha/manifest.json
   sed -i 's/"zigpy-deconz==[0-9\.]*",//i' zha/manifest.json
   sed -i 's/"zigpy-xbee==[0-9\.]*",//i' zha/manifest.json
-  sed -i 's/"zigpy-znp==[0-9\.]*"//i' zha/manifest.json
-  sed -i 's/"zigpy-zigate==[0-9\.]*",/"zigpy-zigate"/i' zha/manifest.json
-  sed -i 's/import bellows.zigbee.application//' zha/core/const.py
-  sed -i 's/import zigpy_cc.zigbee.application//' zha/core/const.py
-  sed -i 's/import zigpy_deconz.zigbee.application//' zha/core/const.py
-  sed -i 's/import zigpy_xbee.zigbee.application//' zha/core/const.py
-  sed -i 's/import zigpy_znp.zigbee.application//' zha/core/const.py
+  sed -i 's/"zigpy-znp==[0-9\.]*",//i' zha/manifest.json
+  sed -i 's/"universal-silabs-flasher==[0-9\.]*",//i' zha/manifest.json
+  sed -i 's/"zigpy-zigate[<=>]=[0-9\.]*"/"zigpy-zigate"/i' zha/manifest.json
+  sed -i 's/RadioType.ezsp/object()  # \0/' zha/__init__.py
+
+  sed -i -E -e 's/import (bellows|zigpy_deconz|zigpy_cc|zigpy_xbee|zigpy_znp).*application/# \0/' -e 's/([ ]*)([a-z_.]*.ControllerApplication,)/\1None # \2/g' -e 's/None # (zigpy_zigate)/\1/' zha/core/const.py
   sed -i -E 's/"(bellows|zigpy_deconz|zigpy_xbee|zigpy_znp)":/# "\1":/' zha/diagnostics.py
   sed -i -E 's/import (bellows|zigpy_deconz|zigpy_xbee|zigpy_znp)/# import \1/' zha/diagnostics.py
-  sed -i -e '/znp = (/,/)/d' -e '/ezsp = (/,/)/d' -e '/deconz = (/,/)/d' -e '/ti_cc = (/,/)/d' -e '/xbee = (/,/)/d' zha/core/const.py
+  sed -i -e '/from homeassistant.components.homeassistant_hardware.silabs_multiprotocol_addon/,/] = 15/d' zha/core/gateway.py
   sed -i 's/    RadioType\./    # RadioType./' zha/radio_manager.py
-  sed -i 's/    # RadioType\.zigate/    RadioType.zigate/' zha/radio_manager.py
+  sed -i -e 's/    # RadioType\.zigate/    RadioType.zigate/' -e 's/from bellows.config import CONF_USE_THREAD/from .core.const import CONF_USE_THREAD/' zha/radio_manager.py
+  sed -i -e 's/from homeassistant.components.homeassistant_hardware import silabs_multiprotocol_addon/silabs_multiprotocol_addon = None  #/' -e 's/from homeassistant.components.homeassistant_yellow/yellow_hardware = None  #/' -e 's/ports = await hass/return await hass/' zha/config_flow.py
+
+  cp zha/repairs/wrong_silabs_firmware.py zha/repairs/__wrong_silabs_firmware.py
+cat <<'EOF' > zha/repairs/wrong_silabs_firmware.py
+ISSUE_WRONG_SILABS_FIRMWARE_INSTALLED = "wrong_silabs_firmware_installed"
+async def warn_on_wrong_silabs_firmware(hass, device_path): return False
+class AlreadyRunningEZSP(Exception): pass
+EOF
 fi
 
 sed -i 's/"cloud",//' default_config/manifest.json
