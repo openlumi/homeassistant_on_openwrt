@@ -1,6 +1,6 @@
 # Homeassistant on OpenWrt
 
-This repo provides tools to install the latest version of Home Assistant. (2024.1.x)
+This repo provides tools to install the latest version of Home Assistant. (2024.2.x)
 on a system with OpenWrt 23.05+ installed. It provides the reduced version of HA with only minimal list of components 
 included. Additionally, it keeps MQTT, ESPHome, and ZHA components as they are 
 widely used with smart home solutions.
@@ -67,7 +67,7 @@ restarted.**
 
 You may want to add more components to your HA installation.
 In this case you have to download tar.gz from PyPI:
-https://pypi.org/project/homeassistant/2024.1.0/#files
+https://pypi.org/project/homeassistant/2024.2.0/#files
 Then extract the content and copy the required components to 
 `/usr/lib/python3.11/site-packages/homeassistant/components`
 If the component uses the frontend wizard, you may want to uncomment the

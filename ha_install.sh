@@ -3,7 +3,7 @@
 
 set -e
 
-HOMEASSISTANT_MAJOR_VERSION="2024.1"
+HOMEASSISTANT_MAJOR_VERSION="2024.2"
 export PIP_DEFAULT_TIMEOUT=100
 
 get_ha_version()
@@ -172,6 +172,8 @@ mkdir -p ${STORAGE_TMP}
 TMPDIR=${STORAGE_TMP} pip3 install --no-cache-dir --no-deps -r /tmp/requirements_nodeps.txt
 # add zeroconf
 grep 'zeroconf' /tmp/requirements_nodeps.txt >> /tmp/owrt_constraints.txt
+# fix deps
+sed -i -e 's/cryptography \(.*\)/cryptography >=36.0.2/' -e 's/chacha20poly1305-reuseable \(.*\)/chacha20poly1305-reuseable >=0.10.0/' /usr/lib/python${PYTHON_VERSION}/site-packages/aioesphomeapi-*-info/METADATA
 
 cat << EOF > /tmp/requirements.txt
 tzdata>=2021.2.post0  # 2021.6+ requirement
@@ -202,6 +204,7 @@ $(version pyudev)  # usb
 $(version pycognito)
 $(version python-miio)  # xiaomi_miio
 $(version PyXiaomiGateway)
+$(version scapy)  # dhcp
 $(version aiodiscover)  # dhcp
 $(version httpx)  # image/http
 $(version hassil)  # conversation
@@ -591,7 +594,7 @@ fi
 
 # backport orjson to classic json
 # helpers
-sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*,/\n/' -e 's/.as_posix/.as_posix()\n    if isinstance(obj, (datetime.date, datetime.time)):\n        return obj.isoformat/' -e 's/json_bytes /json_bytes_old /' -e 's/return json_bytes(data)/return _json_default_encoder(data)/' homeassistant/helpers/json.py
+sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*,/\n/' -e 's/.as_posix/.as_posix()\n    if isinstance(obj, (datetime.date, datetime.time)):\n        return obj.isoformat/' -e 's/json_bytes /json_bytes_old /' -e 's/return json_bytes(data)/return _json_default_encoder(data)/' -e 's/json_fragment = .*/json_fragment = json.loads/' homeassistant/helpers/json.py
 echo 'def json_bytes(data): return json.dumps(data, default=json_encoder_default).encode("utf-8")' >> homeassistant/helpers/json.py
 # util
 sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*/\n/' homeassistant/util/json.py
