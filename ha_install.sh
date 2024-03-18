@@ -135,6 +135,7 @@ opkg install \
   python3-slugify \
   python3-sqlalchemy \
   python3-sqlite3 \
+  python3-uuid \
   python3-unittest \
   python3-urllib \
   python3-urllib3 \
