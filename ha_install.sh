@@ -525,7 +525,7 @@ sed -i 's/ ffmpeg,//' tts/__init__.py
 sed -i -e 's/"ha-av[^"]*", //' -e 's/, "numpy[^"]*"//' stream/manifest.json
 
 # soft float, like mips32 don't have numpy. Cut it off
-if ( ! ls /usr/lib/python3.11/site-packages/ | grep -q numpy ); then
+if ( ! ls /usr/lib/python${PYTHON_VERSION}/site-packages/ | grep -q numpy ); then
   sed -i -e 's/import numpy as np/np = None/' -e 's/np\.ndarray/Any/g' -e 's/TRANSFORM_IMAGE_FUNCTION[orientation]//' stream/core.py
 fi
 #sed -i -e 's/import av/#/' -e 's/av.logging/#/' stream/__init__.py
