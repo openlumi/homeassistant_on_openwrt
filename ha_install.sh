@@ -643,6 +643,9 @@ cd ../
 rm -rf homeassistant-${HOMEASSISTANT_VERSION}/ ${HA_BUILD} ${STORAGE_TMP}
 
 IP=$(ip a | grep "inet .*br-lan" | cut -d " " -f6 | tail -1 | cut -d / -f1)
+if [ -z "$IP" ]; then
+  IP=$(ip a | grep "inet " | cut -d " " -f6 | tail -1 | cut -d / -f1)
+fi
 
 if [ ! -f '/etc/homeassistant/configuration.yaml' ]; then
   mkdir -p /etc/homeassistant
