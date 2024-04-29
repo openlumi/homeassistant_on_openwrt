@@ -460,7 +460,7 @@ TMPSTRUCT=${STORAGE_TMP}/t
 rm -rf ${TMPSTRUCT}
 cd ${STORAGE_TMP}
 tar -ztf /tmp/homeassistant.tar.gz | grep '/homeassistant/components/' | sed 's/^/t\//' | xargs mkdir -p
-rx=$(sed -e 's/^/^/' -e 's/$/$/' cat /tmp/ha_components.txt | head -c -1 | tr '\n' '|')
+rx=$(sed -e 's/^/^/' -e 's/$/$/' /tmp/ha_components.txt | head -c -1 | tr '\n' '|')
 ls -1 ${TMPSTRUCT}/homeassistant-*/homeassistant/components/ | grep -v -E $rx | sed 's/^/*\/homeassistant\/components\//' > /tmp/ha_exclude.txt
 rm -rf ${TMPSTRUCT} /tmp/ha_components.txt
 
