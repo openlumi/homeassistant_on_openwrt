@@ -1,27 +1,10 @@
 #!/bin/sh
 # Homeassistant installer script by @devbis
 
-set -e
-
-HOMEASSISTANT_MAJOR_VERSION="2024.2"
-export PIP_DEFAULT_TIMEOUT=100
-
 get_ha_version()
 {
   wget -q -O- https://pypi.org/simple/homeassistant/ | grep ${HOMEASSISTANT_MAJOR_VERSION} | tail -n 1 | cut -d "-" -f2 | cut -d "." -f1,2,3
 }
-
-HOMEASSISTANT_VERSION=$(get_ha_version)
-STORAGE_TMP="/root/tmp-ha"  # /tmp in RAM too small, additional tmp on flash drive
-
-if [ "${HOMEASSISTANT_VERSION}" == "" ]; then
-  echo "Incorrect Home Assistant version. Exiting ...";
-  exit 1;
-fi
-
-echo "=========================================="
-echo " Installing Home Assistant ${HOMEASSISTANT_VERSION} ..."
-echo "=========================================="
 
 get_python_version()
 {
@@ -45,18 +28,39 @@ is_lumi_gateway()
   ls -1 /dev/ttymxc1 2>/dev/null || echo ''
 }
 
-function int_version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+int_version() {
+  echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'
+}
 
-wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/homeassistant/package_constraints.txt -O - > /tmp/ha_requirements.txt
-wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements.txt -O - >> /tmp/ha_requirements.txt
-wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements_all.txt -O - >> /tmp/ha_requirements.txt
+set -e
+
+HOMEASSISTANT_MAJOR_VERSION="2024.2"
+export PIP_DEFAULT_TIMEOUT=100
+
+HOMEASSISTANT_VERSION=$(get_ha_version)
+STORAGE_TMP="/root/tmp-ha"  # /tmp in RAM too small, additional tmp on flash drive
+
+if [ "${HOMEASSISTANT_VERSION}" = "" ]; then
+  echo "Incorrect Home Assistant version. Exiting ...";
+  exit 1;
+fi
+
+echo "=========================================="
+echo " Installing Home Assistant ${HOMEASSISTANT_VERSION} ..."
+echo "=========================================="
+
+(
+wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/homeassistant/package_constraints.txt -O -
+wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements.txt -O -
+wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements_all.txt -O -
 # now we can fetch nabucasa version and its deps
-wget -q https://raw.githubusercontent.com/NabuCasa/hass-nabucasa/$(get_version hass-nabucasa)/setup.py -O - | grep '[>=]=' | sed -E 's/\s*"(.*)",?/\1/' >> /tmp/ha_requirements.txt
+wget -q https://raw.githubusercontent.com/NabuCasa/hass-nabucasa/"$(get_version hass-nabucasa)"/setup.py -O - | grep '[>=]=' | sed -E 's/\s*"(.*)",?/\1/'
+) >/tmp/ha_requirements.txt
 
 HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
 NABUCASA_VER=$(get_version hass-nabucasa)
 
-if [ $(ps | grep "[/]usr/bin/hass" | wc -l) -gt 0 ]; then
+if pgrep -a -f "usr/bin/hass"; then
   echo "Stop running process of Home Assistant (and HASS Configurator) to free RAM for installation";
   exit 1;
 fi
@@ -155,7 +159,7 @@ cd /tmp/
 rm -rf /etc/homeassistant/deps/
 find /usr/lib/python${PYTHON_VERSION}/site-packages/ | grep -E "/__pycache__$" | xargs rm -rf
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/botocore/data
-find /usr/lib/python${PYTHON_VERSION}/site-packages/numpy -iname tests | xargs rm -rf
+find /usr/lib/python${PYTHON_VERSION}/site-packages/numpy -iname tests -print0 | xargs -0 rm -rf
 
 echo "Install base requirements from PyPI..."
 pip3 install --no-cache-dir wheel
@@ -268,7 +272,7 @@ cd ..
 rm -rf hass-nabucasa-${NABUCASA_VER}.tar.gz hass-nabucasa-${NABUCASA_VER}
 
 # cleanup
-find /usr/lib/python${PYTHON_VERSION}/site-packages -iname tests | xargs rm -rf
+find /usr/lib/python${PYTHON_VERSION}/site-packages -iname tests -print0 | xargs -0 rm -rf
 
 # tmp might be small for frontend
 cd ${STORAGE_TMP}
@@ -456,7 +460,7 @@ TMPSTRUCT=${STORAGE_TMP}/t
 rm -rf ${TMPSTRUCT}
 cd ${STORAGE_TMP}
 tar -ztf /tmp/homeassistant.tar.gz | grep '/homeassistant/components/' | sed 's/^/t\//' | xargs mkdir -p
-rx=$(cat /tmp/ha_components.txt | sed -e 's/^/^/' -e 's/$/$/' | head -c -1 | tr '\n' '|')
+rx=$(sed -e 's/^/^/' -e 's/$/$/' /tmp/ha_components.txt | head -c -1 | tr '\n' '|')
 ls -1 ${TMPSTRUCT}/homeassistant-*/homeassistant/components/ | grep -v -E $rx | sed 's/^/*\/homeassistant\/components\//' > /tmp/ha_exclude.txt
 rm -rf ${TMPSTRUCT} /tmp/ha_components.txt
 
@@ -638,7 +642,10 @@ TMPDIR=${STORAGE_TMP} pip3 install . --no-cache-dir -c /tmp/owrt_constraints.txt
 cd ../
 rm -rf homeassistant-${HOMEASSISTANT_VERSION}/ ${HA_BUILD} ${STORAGE_TMP}
 
-IP=$(ip a | grep "inet " | cut -d " " -f6 | tail -1 | cut -d / -f1)
+IP=$(ip a | grep "inet .*br-lan" | cut -d " " -f6 | tail -1 | cut -d / -f1)
+if [ -z "$IP" ]; then
+  IP=$(ip a | grep "inet " | cut -d " " -f6 | tail -1 | cut -d / -f1)
+fi
 
 if [ ! -f '/etc/homeassistant/configuration.yaml' ]; then
   mkdir -p /etc/homeassistant
