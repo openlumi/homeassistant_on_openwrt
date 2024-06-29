@@ -664,11 +664,11 @@ recorder:
   db_url: 'sqlite:////tmp/homeassistant.db'
   include:
     entity_globs:
-      - sensor.illuminance_*
-      - sensor.btn0_*
-      - sensor.temperature_*
-      - sensor.humidity_*
-      - sensor.presence_*
+      - sensor.*illuminance_*
+      - sensor.*btn0_*
+      - sensor.*temperature_*
+      - sensor.*humidity_*
+      - sensor.*presence_*
       - light.*
 
 panel_iframe:
