@@ -224,7 +224,7 @@ async-upnp-client==0.36.2  # 0.38 requires aiohttp>=3.9
 
 # aioesphomeapi dependencies
 noiseprotocol
-protobuf
+protobuf<5
 aiohappyeyeballs
 chacha20poly1305-reuseable
 
