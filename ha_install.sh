@@ -39,7 +39,7 @@ int_version() {
 
 set -e
 
-HOMEASSISTANT_MAJOR_VERSION="2024.2"
+HOMEASSISTANT_MAJOR_VERSION="2024.3"
 export PIP_DEFAULT_TIMEOUT=100
 
 HOMEASSISTANT_VERSION=$(get_ha_version)
@@ -155,8 +155,6 @@ opkg install \
   python3-yaml \
   python3-yarl
 
-# openwrt master doesn't have this package
-opkg install python3-gdbm 2>/dev/null || true
 # openwrt < 22.03 doesn't have this package
 opkg install python3-pycares 2>/dev/null || true
 # numpy requires hard floating point support and is missing on some MIPS architectures
@@ -186,7 +184,7 @@ TMPDIR=${STORAGE_TMP} pip3 install --no-cache-dir --no-deps -r /tmp/requirements
 # add zeroconf
 grep 'zeroconf' /tmp/requirements_nodeps.txt >> /tmp/owrt_constraints.txt
 # fix deps
-sed -i -e 's/cryptography \(.*\)/cryptography >=36.0.2/' -e 's/chacha20poly1305-reuseable \(.*\)/chacha20poly1305-reuseable >=0.10.0/' /usr/lib/python${PYTHON_VERSION}/site-packages/aioesphomeapi-*-info/METADATA
+sed -i -e 's/cryptography\(.*\)/cryptography >=36.0.2/' -e 's/chacha20poly1305-reuseable\(.*\)/chacha20poly1305-reuseable >=0.10.0/' /usr/lib/python${PYTHON_VERSION}/site-packages/aioesphomeapi-*-info/METADATA
 
 cat << EOF > /tmp/requirements.txt
 tzdata>=2021.2.post0  # 2021.6+ requirement
@@ -203,6 +201,7 @@ $(version ulid-transform)  # utils
 $(version packaging)
 $(version aiohttp-fast-url-dispatcher)
 $(version psutil-home-assistant)
+$(version async-interrupt)
 #$(version aiohttp-zlib-ng)
 
 # homeassistant manifest requirements
@@ -217,7 +216,7 @@ $(version pyudev)  # usb
 $(version pycognito)
 $(version python-miio)  # xiaomi_miio
 $(version PyXiaomiGateway)
-$(version scapy)  # dhcp
+$(version aiodhcpwatcher)  # dhcp
 $(version aiodiscover)  # dhcp
 $(version httpx)  # image/http
 $(version hassil)  # conversation
@@ -359,6 +358,8 @@ config
 conversation
 counter
 cover
+date
+datetime
 default_config
 device_automation
 device_tracker
@@ -399,6 +400,7 @@ lock
 logbook
 logger
 lovelace
+mailbox
 manual
 map
 media_player
@@ -446,6 +448,7 @@ telegram
 telegram_bot
 template
 text
+time
 time_date
 timer
 todo
@@ -634,7 +637,7 @@ fi
 
 # backport orjson to classic json
 # helpers
-sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*,/\n/' -e 's/.as_posix/.as_posix()\n    if isinstance(obj, (datetime.date, datetime.time)):\n        return obj.isoformat/' -e 's/json_bytes /json_bytes_old /' -e 's/return json_bytes(data)/return _json_default_encoder(data)/' -e 's/json_fragment = .*/json_fragment = json.loads/' homeassistant/helpers/json.py
+sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*,/\n/' -e 's/.as_posix/.as_posix()\n    if isinstance(obj, (datetime.date, datetime.time)):\n        return obj.isoformat/' -e 's/json_bytes /json_bytes_old /' -e 's/return json_bytes(data)/return _json_default_encoder(data)/' -e 's/json_fragment = .*/json_fragment = json.loads/' -e 's/mode = "wb"/mode = "w"/' homeassistant/helpers/json.py
 echo 'def json_bytes(data): return json.dumps(data, default=json_encoder_default).encode("utf-8")' >> homeassistant/helpers/json.py
 # util
 sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*/\n/' homeassistant/util/json.py
