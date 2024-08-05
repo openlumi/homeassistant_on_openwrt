@@ -25,7 +25,12 @@ version()
 
 is_lumi_gateway()
 {
-  ls -1 /dev/ttymxc1 2>/dev/null || echo ''
+  cat /etc/board.json | grep -E '(dgnwg05lm|zhwg11lm)' | tr -s '"' | cut -d\" -f4
+}
+
+is_gtw360()
+{
+  cat /etc/board.json | grep 'gtw360' | tr -s '"' | cut -d\" -f4
 }
 
 int_version() {
@@ -59,6 +64,7 @@ wget -q https://raw.githubusercontent.com/NabuCasa/hass-nabucasa/"$(get_version 
 
 HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
 NABUCASA_VER=$(get_version hass-nabucasa)
+ZIGPY_ZBOSS_VER=1.2.0
 
 if pgrep -a -f "usr/bin/hass"; then
   echo "Stop running process of Home Assistant (and HASS Configurator) to free RAM for installation";
@@ -73,6 +79,8 @@ opkg update
 PYTHON_VERSION=$(get_python_version)
 echo "Detected Python ${PYTHON_VERSION}"
 LUMI_GATEWAY=$(is_lumi_gateway)
+GTW360_GATEWAY=$(is_gtw360)
+NEED_ZHA="$LUMI_GATEWAY$GTW360_GATEWAY"
 
 # Install them first to check Openlumi feed id added
 opkg install \
@@ -232,19 +240,29 @@ chacha20poly1305-reuseable
 hass-configurator==0.4.1
 EOF
 
-if [ $LUMI_GATEWAY ]; then
+if [ $NEED_ZHA ]; then
   cat << EOF >> /tmp/requirements.txt
 # zha requirements
 $(version pyserial)
 $(version zha-quirks)
 $(version zigpy)
+EOF
+fi
+
+if [ $LUMI_GATEWAY ]; then
+  cat << EOF >> /tmp/requirements.txt
 $(version zigpy-zigate)
 EOF
 fi
 
 TMPDIR=${STORAGE_TMP} pip3 install --no-cache-dir -c /tmp/owrt_constraints.txt -r /tmp/requirements.txt
 
-if [ $LUMI_GATEWAY ]; then
+if [ $GTW360_GATEWAY ]; then
+  pip3 install --no-deps zigpy-zboss==${ZIGPY_ZBOSS_VER}
+  sed -i -E 's/Requires-.*(jsonschema|coloredlogs)//g' /usr/lib/python${PYTHON_VERSION}/site-packages/zigpy_zboss-*-info/METADATA
+fi
+
+if [ $NEED_ZHA ]; then
   # show internal serial ports for Xiaomi Gateway
   sed -i 's/ttyXRUSB\*/ttymxc[1-9]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
   sed -i 's/if info.subsystem != "platform"]/]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
@@ -451,7 +469,7 @@ yeelight
 zeroconf
 zone
 EOF
-if [ $LUMI_GATEWAY ]; then
+if [ $NEED_ZHA ]; then
   echo "zha" >> /tmp/ha_components.txt
 fi
 
@@ -542,7 +560,7 @@ sed -i 's/import av/av = None/' stream/recorder.py
 sed -i 's/fnv-hash-fast==[0-9\.]*/fnvhash/i' recorder/manifest.json
 sed -i 's/from fnv_hash_fast/from fnvhash/' recorder/db_schema.py
 
-if [ $LUMI_GATEWAY ]; then
+if [ $NEED_ZHA ]; then
   # remove unwanted zha requirements
   sed -i 's/"bellows==[0-9\.]*",//i' zha/manifest.json
   sed -i 's/"zigpy-cc==[0-9\.]*",//i' zha/manifest.json
@@ -550,15 +568,14 @@ if [ $LUMI_GATEWAY ]; then
   sed -i 's/"zigpy-xbee==[0-9\.]*",//i' zha/manifest.json
   sed -i 's/"zigpy-znp==[0-9\.]*",//i' zha/manifest.json
   sed -i 's/"universal-silabs-flasher==[0-9\.]*",//i' zha/manifest.json
-  sed -i 's/"zigpy-zigate[<=>]=[0-9\.]*"/"zigpy-zigate"/i' zha/manifest.json
   sed -i 's/RadioType.ezsp/object()  # \0/' zha/__init__.py
 
-  sed -i -E -e 's/import (bellows|zigpy_deconz|zigpy_cc|zigpy_xbee|zigpy_znp).*application/# \0/' -e 's/([ ]*)([a-z_.]*.ControllerApplication,)/\1None # \2/g' -e 's/None # (zigpy_zigate)/\1/' zha/core/const.py
-  sed -i -E 's/"(bellows|zigpy_deconz|zigpy_xbee|zigpy_znp)":/# "\1":/' zha/diagnostics.py
-  sed -i -E 's/import (bellows|zigpy_deconz|zigpy_xbee|zigpy_znp)/# import \1/' zha/diagnostics.py
+  sed -i -E -e 's/import (bellows|zigpy_deconz|zigpy_cc|zigpy_xbee|zigpy_znp|zigpy_zigate).*application/# \0/' -e 's/([ ]*)([a-z_.]*.ControllerApplication,)/\1None # \2/g' zha/core/const.py
+  sed -i -E 's/"(bellows|zigpy_deconz|zigpy_xbee|zigpy_znp|zigpy_zigate)":/# "\1":/' zha/diagnostics.py
+  # sed -i -E 's/import (bellows|zigpy_deconz|zigpy_xbee|zigpy_znp)/# import \1/' zha/diagnostics.py
   sed -i -e '/from homeassistant.components.homeassistant_hardware.silabs_multiprotocol_addon/,/] = 15/d' zha/core/gateway.py
   sed -i 's/    RadioType\./    # RadioType./' zha/radio_manager.py
-  sed -i -e 's/    # RadioType\.zigate/    RadioType.zigate/' -e 's/from bellows.config import CONF_USE_THREAD/from .core.const import CONF_USE_THREAD/' zha/radio_manager.py
+  sed -i 's/from bellows.config import CONF_USE_THREAD/from .core.const import CONF_USE_THREAD/' zha/radio_manager.py
   sed -i -e 's/from homeassistant.components.homeassistant_hardware import silabs_multiprotocol_addon/silabs_multiprotocol_addon = None  #/' -e 's/from homeassistant.components.homeassistant_yellow/yellow_hardware = None  #/' -e 's/ports = await hass/return await hass/' zha/config_flow.py
 
   cp zha/repairs/wrong_silabs_firmware.py zha/repairs/__wrong_silabs_firmware.py
@@ -567,6 +584,17 @@ ISSUE_WRONG_SILABS_FIRMWARE_INSTALLED = "wrong_silabs_firmware_installed"
 async def warn_on_wrong_silabs_firmware(hass, device_path): return False
 class AlreadyRunningEZSP(Exception): pass
 EOF
+fi
+
+if [ $LUMI_GATEWAY ]; then
+  sed -i 's/"zigpy-zigate[<=>]=[0-9\.]*"/"zigpy-zigate"/i' zha/manifest.json
+  sed -i -E -e 's/#[ ]*(.*zigate.*application)/\1/' -e 's/None # (zigpy_zigate)/\1/' zha/core/const.py
+  sed -i -E 's/# ("zigpy_zigate")/\1/' zha/diagnostics.py
+  sed -i 's/    # RadioType\.zigate/    RadioType.zigate/' zha/radio_manager.py
+fi
+if [ $GTW360_GATEWAY ]; then
+  sed -i 's/"zigpy-zigate[<=>]=[0-9\.]*"/"zigpy-zboss"/i' zha/manifest.json
+  sed -i -E -e 's/import.*zigpy_znp.*application/\0\nimport zigpy_zboss.zigbee.application/' -e 's/([ ]*)xbee = [(]/\1zboss = ("ZBOSS = Nordic ZBOSS Zigbee radios: nRF52840, nrf5340", zigpy_zboss.zigbee.application.ControllerApplication)\n\0/' zha/core/const.py
 fi
 
 sed -i 's/"cloud",//' default_config/manifest.json
@@ -586,7 +614,7 @@ sed -i 's/    # "mqtt"/    "mqtt"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "esphome"/    "esphome"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "met"/    "met"/' homeassistant/generated/config_flows.py
 sed -i 's/    # "radio_browser"/    "radio_browser"/' homeassistant/generated/config_flows.py
-if [ $LUMI_GATEWAY ]; then
+if [ $NEED_ZHA ]; then
   sed -i 's/    # "zha"/    "zha"/' homeassistant/generated/config_flows.py
 fi
 
