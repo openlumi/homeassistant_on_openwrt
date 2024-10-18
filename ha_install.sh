@@ -591,7 +591,7 @@ fi
 
 if [ $LUMI_GATEWAY ]; then
   sed -i 's/"zigpy-zigate[<=>]=[0-9\.]*"/"zigpy-zigate"/i' zha/manifest.json
-  sed -i -E -e 's/#[ ]*(.*zigate.*application)/\1/' -e 's/None # (zigpy_zigate)/\1/' zha/core/const.py
+  sed -i -E -e 's/#[ ]*(.*zigate.*application)/\1/' -e 's/None (zigpy_zigate)/\1/' zha/core/const.py
   sed -i -E 's/# ("zigpy_zigate")/\1/' zha/diagnostics.py
   sed -i 's/    # RadioType\.zigate/    RadioType.zigate/' zha/radio_manager.py
 fi
