@@ -1,6 +1,10 @@
 #!/bin/sh
 # Homeassistant installer script by @devbis
 
+is_apk() {
+  command -v apk 2>&1 >/dev/null
+}
+
 get_ha_version()
 {
   wget -q -O- https://pypi.org/simple/homeassistant/ | grep ${HOMEASSISTANT_MAJOR_VERSION} | tail -n 1 | cut -d "-" -f2 | cut -d "." -f1,2,3
@@ -8,7 +12,11 @@ get_ha_version()
 
 get_python_version()
 {
-  opkg list | grep python3-base | head -n 1 | grep -Eo '[[:digit:]]+\.[[:digit:]]+'
+  if is_apk; then
+    apk info python3-base | head -n 1 | grep -Eo '[[:digit:]]+\.[[:digit:]]+'
+  else
+    opkg list | grep python3-base | head -n 1 | grep -Eo '[[:digit:]]+\.[[:digit:]]+'
+  fi
 }
 
 get_version()
@@ -35,6 +43,22 @@ is_gtw360()
 
 int_version() {
   echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'
+}
+
+pkg_install() {
+  if is_apk; then
+    apk add "$@"
+  else
+    opkg install "$@"
+  fi
+}
+
+pkg_cache_update() {
+  if is_apk; then
+    apk update
+  else
+    opkg update
+  fi
 }
 
 set -e
@@ -74,7 +98,7 @@ fi
 rm -rf ${STORAGE_TMP}
 
 echo "Install base requirements from feed..."
-opkg update
+pkg_cache_update
 
 PYTHON_VERSION=$(get_python_version)
 echo "Detected Python ${PYTHON_VERSION}"
@@ -83,12 +107,12 @@ GTW360_GATEWAY=$(is_gtw360)
 NEED_ZHA="$LUMI_GATEWAY$GTW360_GATEWAY"
 
 # Install them first to check Openlumi feed id added
-opkg install \
+pkg_install \
   python3-base \
   python3-pynacl \
   python3-ciso8601
 
-opkg install \
+pkg_install \
   patch \
   unzip \
   libjpeg-turbo \
@@ -156,9 +180,9 @@ opkg install \
   python3-yarl
 
 # openwrt < 22.03 doesn't have this package
-opkg install python3-pycares 2>/dev/null || true
+pkg_install python3-pycares 2>/dev/null || true
 # numpy requires hard floating point support and is missing on some MIPS architectures
-opkg install python3-numpy 2>/dev/null || true
+pkg_install python3-numpy 2>/dev/null || true
 
 cd /tmp/
 
