@@ -560,6 +560,9 @@ sed -i -e 's/import mqtt/\0\nfrom .util import */g' -e 's/mqtt\.util\.//' mqtt/t
 sed -i 's/, "ffmpeg"//' tts/manifest.json
 sed -i 's/ ffmpeg,//' tts/__init__.py
 
+# drop matter requirement from google_assistant, it is a dependency for mobile_app
+sed -i -E 's/(\, *)?"matter"//' google_assistant/manifest.json
+
 # drop numpy dep from stream
 sed -i -e 's/"ha-av[^"]*", //' -e 's/, "numpy[^"]*"//' stream/manifest.json
 
