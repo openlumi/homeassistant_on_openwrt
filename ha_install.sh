@@ -3,7 +3,7 @@
 
 get_ha_version()
 {
-  wget -q -O- https://pypi.org/simple/homeassistant/ | grep ${HOMEASSISTANT_MAJOR_VERSION} | tail -n 1 | cut -d "-" -f2 | cut -d "." -f1,2,3
+  wget -q -O- https://pypi.org/simple/homeassistant/ | grep ${HOMEASSISTANT_MAJOR_VERSION} | tail -n 1 | sed -n 's/.*homeassistant-\([0-9.ab]*\)\..*/\1/p'
 }
 
 get_python_version()
