@@ -231,6 +231,7 @@ $(version paho-mqtt)  # mqtt
 # fixed dependencies
 python-jose[cryptography]==3.2.0  # (pycognito dep) 3.3.0 is not compatible with the python3-cryptography in the feed
 fnvhash==0.1.0  # replacement for fnv-hash-fast in recorder
+aiodns==3.4.0  # dependency of radios, newer versions require pycares > 4.9.0 while 4.4.0 is compiled in Openwrt
 radios==0.1.1  # radio_browser, newer versions require orjson
 async-upnp-client==0.36.2  # 0.38 requires aiohttp>=3.9
 
