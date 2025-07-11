@@ -181,6 +181,7 @@ cat << EOF > /tmp/requirements_nodeps.txt
 $(version aioesphomeapi)
 $(version esphome-dashboard-api)
 $(version zeroconf)
+$(version PyTurboJPEG)
 EOF
 
 mkdir -p ${STORAGE_TMP}
