@@ -1,6 +1,8 @@
 #!/bin/sh
 # Homeassistant installer script by @devbis
 
+set -x
+
 is_apk() {
   command -v apk 2>&1 >/dev/null
 }
@@ -63,7 +65,7 @@ pkg_cache_update() {
 
 set -e
 
-HOMEASSISTANT_MAJOR_VERSION="2024.3"
+HOMEASSISTANT_MAJOR_VERSION="2026.4"
 export PIP_DEFAULT_TIMEOUT=100
 
 HOMEASSISTANT_VERSION=$(get_ha_version)
@@ -109,15 +111,14 @@ NEED_ZHA="$LUMI_GATEWAY$GTW360_GATEWAY"
 # Install them first to check Openlumi feed id added
 pkg_install \
   python3-base \
-  python3-pynacl \
-  python3-ciso8601
+  python3-pynacl
+
+#  python3-ciso8601
 
 pkg_install \
   patch \
   unzip \
   libjpeg-turbo \
-  python3-aiohttp \
-  python3-aiohttp-cors \
   python3-async-timeout \
   python3-asyncio \
   python3-attrs \
@@ -126,8 +127,6 @@ pkg_install \
   python3-botocore \
   python3-certifi \
   python3-cffi \
-  python3-cgi \
-  python3-cgitb \
   python3-chardet \
   python3-codecs \
   python3-cryptodome \
@@ -138,9 +137,7 @@ pkg_install \
   python3-dbm \
   python3-decimal \
   python3-defusedxml \
-  python3-distutils \
   python3-docutils \
-  python3-email \
   python3-greenlet \
   python3-idna \
   python3-jinja2 \
@@ -149,15 +146,12 @@ pkg_install \
   python3-logging \
   python3-lzma \
   python3-markupsafe \
-  python3-multidict \
   python3-multiprocessing \
   python3-ncurses \
   python3-netdisco \
-  python3-netifaces \
   python3-openssl \
   python3-pillow \
   python3-pip \
-  python3-pkg-resources \
   python3-ply \
   python3-psutil \
   python3-pycparser \
@@ -176,8 +170,18 @@ pkg_install \
   python3-urllib \
   python3-urllib3 \
   python3-xml \
-  python3-yaml \
-  python3-yarl
+  python3-yaml
+
+#  python3-aiohttp \
+#  python3-aiohttp-cors \
+#  python3-cgi \
+#  python3-cgitb \
+#  python3-distutils \
+#  python3-email \
+#  python3-multidict  \
+#  python3-netifaces \
+#  python3-pkg-resources \
+#  python3-yarl
 
 # openwrt < 22.03 doesn't have this package
 pkg_install python3-pycares 2>/dev/null || true
