@@ -218,7 +218,6 @@ cat << EOF > /tmp/requirements.txt
 tzdata>=2021.2.post0  # 2021.6+ requirement
 
 $(version atomicwrites-homeassistant)  # nabucasa dep
-$(version snitun)  # nabucasa dep
 $(version astral)
 $(version awesomeversion)
 $(version PyJWT)
@@ -227,7 +226,6 @@ $(version voluptuous-serialize)
 # $(version sqlalchemy)  # recorder requirement
 $(version ulid-transform)  # utils
 $(version packaging)
-$(version aiohttp-fast-url-dispatcher)
 $(version psutil-home-assistant)
 $(version async-interrupt)
 #$(version aiohttp-zlib-ng)
@@ -238,11 +236,8 @@ $(version pyMetno)
 $(version mutagen)
 $(version pyotp)
 $(version gTTS)
-$(version janus)  # file_upload
 $(version securetar)  # backup
-$(version pyudev)  # usb
-$(version pycognito)
-$(version python-miio)  # xiaomi_miio
+#$(version python-miio)  # xiaomi_miio
 $(version PyXiaomiGateway)
 $(version aiodhcpwatcher)  # dhcp
 $(version aiodiscover)  # dhcp
@@ -255,7 +250,6 @@ $(version paho-mqtt)  # mqtt
 python-jose[cryptography]==3.2.0  # (pycognito dep) 3.3.0 is not compatible with the python3-cryptography in the feed
 fnvhash==0.1.0  # replacement for fnv-hash-fast in recorder
 radios==0.1.1  # radio_browser, newer versions require orjson
-async-upnp-client==0.36.2  # 0.38 requires aiohttp>=3.9
 
 # aioesphomeapi dependencies
 noiseprotocol
@@ -525,7 +519,7 @@ echo '' > requirements.txt
 sed -i "s/[>=]=.*//g" package_constraints.txt
 
 # replace LRU with simple dict
-sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' helpers/template.py
+#sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' helpers/template.py
 
 cd components
 
@@ -534,13 +528,13 @@ sed -i -E 's/^( *)filepath.*?= (.*).joinpath\(filename\).resolve\(\)/\1try:\n\1 
 sed -i -E 's/^( *)headers=\{/\0\n\1    **({hdrs.CONTENT_ENCODING: "gzip"} if filepath.suffix == ".gz" else {}),/' http/static.py
 
 # replace LRU with simple dict
-sed -i 's/, "lru-dict==[0-9\.]*"//' recorder/manifest.json
-sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/core.py
-sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/table_managers/event_types.py
-sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/__init__.py
-sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/statistics_meta.py
-sed -i 's/from lru import LRU/LRU = lambda x: dict()/' http/static.py
-sed -i 's/from lru import LRU/LRU = lambda x: dict()/' esphome/entry_data.py
+#sed -i 's/, "lru-dict==[0-9\.]*"//' recorder/manifest.json
+#sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/core.py
+#sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/table_managers/event_types.py
+#sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/__init__.py
+#sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/statistics_meta.py
+#sed -i 's/from lru import LRU/LRU = lambda x: dict()/' http/static.py
+#sed -i 's/from lru import LRU/LRU = lambda x: dict()/' esphome/entry_data.py
 
 # relax dependencies
 sed -i 's/sqlalchemy==[0-9\.]*/sqlalchemy/i' recorder/manifest.json
@@ -671,7 +665,7 @@ echo 'def json_bytes(data): return json.dumps(data, default=json_encoder_default
 sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*/\n/' homeassistant/util/json.py
 # aiohttp_client.py
 sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' homeassistant/helpers/aiohttp_client.py
-sed -i -E -e 's/orjson/json/g' -e 's/\.decode(.*)//' -e 's/(b64(de|en)code.*?)/\1.decode("utf-8")/' -e 's/option=option/#option=option/' -e 's/json.OPT_[A-Z_0-9]*/0/g'  homeassistant/helpers/template.py
+#sed -i -E -e 's/orjson/json/g' -e 's/\.decode(.*)//' -e 's/(b64(de|en)code.*?)/\1.decode("utf-8")/' -e 's/option=option/#option=option/' -e 's/json.OPT_[A-Z_0-9]*/0/g'  homeassistant/helpers/template.py
 
 # disable aiohttp_zlib_ng
 sed -i -E -e 's/"aiohttp-zlib-ng[^"]*"//' -e 's/(dispatcher[^,]*?),/\1/' homeassistant/components/http/manifest.json
