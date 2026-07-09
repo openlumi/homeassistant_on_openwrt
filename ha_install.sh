@@ -15,7 +15,7 @@ get_ha_version()
 get_python_version()
 {
   if is_apk; then
-    apk info python3-base | head -n 1 | grep -Eo '[[:digit:]]+\.[[:digit:]]+'
+    apk list python3-base 2>/dev/null | head -n 1 | grep -Eo '[[:digit:]]+\.[[:digit:]]+' | head -1
   else
     opkg list | grep python3-base | head -n 1 | grep -Eo '[[:digit:]]+\.[[:digit:]]+'
   fi
@@ -24,7 +24,16 @@ get_python_version()
 get_version()
 {
   local pkg=$1
-  cat /tmp/ha_requirements.txt | grep -i -m 1 "${pkg}[<=>]=" | sed 's/.*[<=>]=\(.*\)/\1/g'
+  local file=${2:-/tmp/ha_package_constraints.txt}
+  grep -i -m 1 "${pkg}[<=>]=" "$file" | sed 's/.*[<=>]=\(.*\)/\1/g'
+}
+
+# get_latest_constraint returns the LAST matching version (for packages with multiple constraints)
+get_latest_constraint()
+{
+  local pkg=$1
+  local file=${2:-/tmp/ha_package_constraints.txt}
+  grep -i "${pkg}[<=>]=" "$file" | tail -1 | sed 's/.*[<=>]=\(.*\)/\1/g'
 }
 
 version()
@@ -65,7 +74,7 @@ pkg_cache_update() {
 
 set -e
 
-HOMEASSISTANT_MAJOR_VERSION="2026.4"
+HOMEASSISTANT_MAJOR_VERSION="2026.7"
 export PIP_DEFAULT_TIMEOUT=100
 
 HOMEASSISTANT_VERSION=$(get_ha_version)
@@ -80,13 +89,7 @@ echo "=========================================="
 echo " Installing Home Assistant ${HOMEASSISTANT_VERSION} ..."
 echo "=========================================="
 
-(
-wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/homeassistant/package_constraints.txt -O -
-wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements.txt -O -
-wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/requirements_all.txt -O -
-# now we can fetch nabucasa version and its deps
-wget -q https://raw.githubusercontent.com/NabuCasa/hass-nabucasa/"$(get_version hass-nabucasa)"/setup.py -O - | grep '[>=]=' | sed -E 's/\s*"(.*)",?/\1/'
-) >/tmp/ha_requirements.txt
+wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/homeassistant/package_constraints.txt -O /tmp/ha_package_constraints.txt
 
 HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
 NABUCASA_VER=$(get_version hass-nabucasa)
@@ -119,18 +122,14 @@ pkg_install \
   patch \
   unzip \
   libjpeg-turbo \
-  python3-async-timeout \
-  python3-asyncio \
   python3-attrs \
   python3-bcrypt \
   python3-boto3 \
   python3-botocore \
   python3-certifi \
   python3-cffi \
-  python3-chardet \
+  python3-charset-normalizer \
   python3-codecs \
-  python3-cryptodome \
-  python3-cryptodomex \
   python3-cryptography \
   python3-ctypes \
   python3-dateutil \
@@ -142,7 +141,6 @@ pkg_install \
   python3-idna \
   python3-jinja2 \
   python3-jmespath \
-  python3-light \
   python3-logging \
   python3-lzma \
   python3-markupsafe \
@@ -150,14 +148,13 @@ pkg_install \
   python3-ncurses \
   python3-netdisco \
   python3-openssl \
+  python3-packaging \
   python3-pillow \
   python3-pip \
-  python3-ply \
   python3-psutil \
   python3-pycparser \
   python3-pydoc \
   python3-pyopenssl \
-  python3-pytz \
   python3-requests \
   python3-s3transfer \
   python3-setuptools \
@@ -165,6 +162,7 @@ pkg_install \
   python3-slugify \
   python3-sqlalchemy \
   python3-sqlite3 \
+  python3-typing-extensions \
   python3-uuid \
   python3-unittest \
   python3-urllib \
@@ -172,98 +170,85 @@ pkg_install \
   python3-xml \
   python3-yaml
 
-#  python3-aiohttp \
-#  python3-aiohttp-cors \
-#  python3-cgi \
-#  python3-cgitb \
-#  python3-distutils \
-#  python3-email \
-#  python3-multidict  \
-#  python3-netifaces \
-#  python3-pkg-resources \
-#  python3-yarl
-
-# openwrt < 22.03 doesn't have this package
+# Optional packages (may not be available on all platforms/versions)
+pkg_install python3-orjson 2>/dev/null && ORJSON_FEED=1 || ORJSON_FEED=0
+pkg_install python3-lru-dict 2>/dev/null && LRU_FEED=1 || LRU_FEED=0
+pkg_install python3-fnv-hash-fast 2>/dev/null && FNV_FEED=1 || FNV_FEED=0
 pkg_install python3-pycares 2>/dev/null || true
-# numpy requires hard floating point support and is missing on some MIPS architectures
 pkg_install python3-numpy 2>/dev/null || true
+pkg_install python3-paho-mqtt 2>/dev/null || true
+pkg_install python3-zeroconf 2>/dev/null || true
+pkg_install python3-async-timeout 2>/dev/null || true
 
 cd /tmp/
 
-rm -rf /etc/homeassistant/deps/
-find /usr/lib/python${PYTHON_VERSION}/site-packages/ | grep -E "/__pycache__$" | xargs rm -rf
-rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/botocore/data
-find /usr/lib/python${PYTHON_VERSION}/site-packages/numpy -iname tests -print0 | xargs -0 rm -rf
+rm -rf /etc/homeassistant/deps/ 2>/dev/null || true
+find /usr/lib/python${PYTHON_VERSION}/site-packages/ -maxdepth 3 2>/dev/null | grep -E "/__pycache__$" | xargs rm -rf 2>/dev/null || true
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/botocore/data 2>/dev/null || true
+find /usr/lib/python${PYTHON_VERSION}/site-packages/numpy -iname tests -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true
 
 echo "Install base requirements from PyPI..."
 pip3 install --no-cache-dir wheel
 pip3 freeze > /tmp/freeze.txt
-grep -E 'aiohttp|async-timeout|crypto|YAML' /tmp/freeze.txt > /tmp/owrt_constraints.txt
-
-cat << EOF > /tmp/requirements_nodeps.txt
-$(version aioesphomeapi)
-$(version esphome-dashboard-api)
-$(version zeroconf)
-EOF
+grep -E 'aiohttp|async-timeout|crypto|YAML|zeroconf|orjson|lru-dict|fnv' /tmp/freeze.txt > /tmp/owrt_constraints.txt
 
 mkdir -p ${STORAGE_TMP}
 
-TMPDIR=${STORAGE_TMP} pip3 install --no-cache-dir --no-deps -r /tmp/requirements_nodeps.txt
-# add zeroconf
-grep 'zeroconf' /tmp/requirements_nodeps.txt >> /tmp/owrt_constraints.txt
+# Install component-specific packages without version pins (not in package_constraints.txt)
+TMPDIR=${STORAGE_TMP} pip3 install --no-cache-dir --no-deps aioesphomeapi esphome-dashboard-api 2>/dev/null || true
+
 # fix deps
-sed -i -e 's/cryptography\(.*\)/cryptography >=36.0.2/' -e 's/chacha20poly1305-reuseable\(.*\)/chacha20poly1305-reuseable >=0.10.0/' /usr/lib/python${PYTHON_VERSION}/site-packages/aioesphomeapi-*-info/METADATA
+if ls /usr/lib/python${PYTHON_VERSION}/site-packages/aioesphomeapi-*-info/METADATA 2>/dev/null; then
+  sed -i -e 's/cryptography\(.*\)/cryptography >=36.0.2/' -e 's/chacha20poly1305-reuseable\(.*\)/chacha20poly1305-reuseable >=0.10.0/' /usr/lib/python${PYTHON_VERSION}/site-packages/aioesphomeapi-*-info/METADATA
+fi
 
 cat << EOF > /tmp/requirements.txt
-tzdata>=2021.2.post0  # 2021.6+ requirement
+tzdata>=2021.2.post0
 
-$(version atomicwrites-homeassistant)  # nabucasa dep
+# Core HA dependencies (from package_constraints.txt, not in feed)
+$(version atomicwrites-homeassistant)
 $(version astral)
 $(version awesomeversion)
 $(version PyJWT)
 $(version voluptuous)
 $(version voluptuous-serialize)
-# $(version sqlalchemy)  # recorder requirement
-$(version ulid-transform)  # utils
+$(version ulid-transform)
 $(version packaging)
 $(version psutil-home-assistant)
 $(version async-interrupt)
-#$(version aiohttp-zlib-ng)
+$(version aiozoneinfo)
+$(version webrtc-models)
+$(version annotatedyaml)
+$(version aiohttp_cors)
+$(version aiohttp-asyncmdnsresolver)
+$(version cronsim)
+$(version voluptuous-openapi)
+$(version securetar)
+$(version aiodhcpwatcher)
+$(version aiodiscover)
+$(version httpx)
+$(version hassil)
+$(version home-assistant-intents)
+$(version propcache)
+$(version yarl)
+multidict>=6.4.2
+$(version aiohttp)
+$(version ciso8601)
+$(version audioop-lts)
+$(version standard-aifc)
+$(version standard-telnetlib)
+$(version home-assistant-bluetooth)
 
-# homeassistant manifest requirements
-$(version PyQRCode)
-$(version pyMetno)
-$(version mutagen)
-$(version pyotp)
-$(version gTTS)
-$(version securetar)  # backup
-#$(version python-miio)  # xiaomi_miio
-$(version PyXiaomiGateway)
-$(version aiodhcpwatcher)  # dhcp
-$(version aiodiscover)  # dhcp
-$(version httpx)  # image/http
-$(version hassil)  # conversation
-$(version home-assistant-intents)  # conversation
-$(version paho-mqtt)  # mqtt
+# Manifest requirements (in package_constraints.txt)
+mutagen
+paho-mqtt
 
-# fixed dependencies
-python-jose[cryptography]==3.2.0  # (pycognito dep) 3.3.0 is not compatible with the python3-cryptography in the feed
-fnvhash==0.1.0  # replacement for fnv-hash-fast in recorder
-radios==0.1.1  # radio_browser, newer versions require orjson
-
-# aioesphomeapi dependencies
-noiseprotocol
-protobuf<5
-aiohappyeyeballs
-chacha20poly1305-reuseable
-
-# extra services
+# Extra services
 hass-configurator==0.4.1
 EOF
 
 if [ $NEED_ZHA ]; then
   cat << EOF >> /tmp/requirements.txt
-# zha requirements
 $(version pyserial)
 $(version zha-quirks)
 $(version zigpy)
@@ -290,35 +275,30 @@ if [ $NEED_ZHA ]; then
 fi
 
 # fix deps
-# shellcheck disable=SC2144
-if [ -f /usr/lib/python${PYTHON_VERSION}/site-packages/botocore-*-info/METADATA ]; then
+if ls /usr/lib/python${PYTHON_VERSION}/site-packages/botocore-*-info/METADATA 2>/dev/null; then
   sed -i 's/urllib3 \(.*\)/urllib3 (>=1.20)/' /usr/lib/python${PYTHON_VERSION}/site-packages/botocore-*-info/METADATA
   sed -i 's/botocore \(.*\)/botocore (>=1.12.0)/' /usr/lib/python${PYTHON_VERSION}/site-packages/boto3-*-info/METADATA
 else
-  sed -i 's/urllib3<1.25,>=1.20/urllib3>=1.20/' /usr/lib/python${PYTHON_VERSION}/site-packages/botocore-*.egg-info/requires.txt
-  sed -i 's/botocore<1.13.0,>=1.12.135/botocore<1.13.0,>=1.12.0/' /usr/lib/python${PYTHON_VERSION}/site-packages/boto3-*.egg-info/requires.txt
+  sed -i 's/urllib3<1.25,>=1.20/urllib3>=1.20/' /usr/lib/python${PYTHON_VERSION}/site-packages/botocore-*.egg-info/requires.txt 2>/dev/null || true
+  sed -i 's/botocore<1.13.0,>=1.12.135/botocore<1.13.0,>=1.12.0/' /usr/lib/python${PYTHON_VERSION}/site-packages/boto3-*.egg-info/requires.txt 2>/dev/null || true
 fi
-rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/pycountry/{locales,tests}
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/pycountry/{locales,tests} 2>/dev/null || true
 
-echo "Install hass_nabucasa and ha-frontend..."
-wget https://github.com/NabuCasa/hass-nabucasa/archive/${NABUCASA_VER}.tar.gz -O - > hass-nabucasa-${NABUCASA_VER}.tar.gz
-tar -zxf hass-nabucasa-${NABUCASA_VER}.tar.gz
-cd hass-nabucasa-${NABUCASA_VER}
-sed -i 's/[<=>]=.*"/"/' setup.py
-rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_nabucasa-*.egg
-pip3 install . --no-cache-dir -c /tmp/owrt_constraints.txt
-cd ..
-rm -rf hass-nabucasa-${NABUCASA_VER}.tar.gz hass-nabucasa-${NABUCASA_VER}
+echo "Install hass_nabucasa..."
+pip3 install hass-nabucasa==${NABUCASA_VER} --no-cache-dir -c /tmp/owrt_constraints.txt
 
 # cleanup
-find /usr/lib/python${PYTHON_VERSION}/site-packages -iname tests -print0 | xargs -0 rm -rf
+find /usr/lib/python${PYTHON_VERSION}/site-packages -iname tests -print0 | xargs -0 rm -rf 2>/dev/null || true
 
-# tmp might be small for frontend
-cd ${STORAGE_TMP}
-rm -rf home-assistant-frontend.zip home-assistant-frontend-${HOMEASSISTANT_FRONTEND_VERSION}
+echo "Install ha-frontend..."
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/hass_frontend
 rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/home_assistant_frontend-*
-wget https://pypi.org/simple/home-assistant-frontend/ -O - | grep home_assistant_frontend-${HOMEASSISTANT_FRONTEND_VERSION}-py3 | cut -d '"' -f2 | xargs wget -O /tmp/home-assistant-frontend.zip
+
+cd ${STORAGE_TMP}
+rm -rf home-assistant-frontend*
+
+FRONTEND_URL=$(wget -q -O- https://pypi.org/simple/home-assistant-frontend/ | grep home_assistant_frontend-${HOMEASSISTANT_FRONTEND_VERSION}-py3 | cut -d '"' -f2 | head -1)
+wget -q "$FRONTEND_URL" -O /tmp/home-assistant-frontend.zip
 unzip -qqo /tmp/home-assistant-frontend.zip -d home-assistant-frontend
 rm -rf /tmp/home-assistant-frontend.zip
 cd home-assistant-frontend
@@ -391,6 +371,7 @@ energy
 esphome
 event
 fan
+file
 file_upload
 frontend
 geo_location
@@ -415,6 +396,7 @@ input_select
 input_text
 integration
 intent
+labs
 lawn_mower
 light
 local_todo
@@ -515,11 +497,17 @@ rm -rf /tmp/ha_exclude.txt
 
 rm -rf homeassistant.tar.gz
 cd homeassistant-${HOMEASSISTANT_VERSION}/homeassistant/
-echo '' > requirements.txt
-sed -i "s/[>=]=.*//g" package_constraints.txt
 
-# replace LRU with simple dict
-#sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' helpers/template.py
+# Patch Python version check for Python 3.13 compat
+sed -i 's/REQUIRED_PYTHON_VER = (3, 14, 2)/REQUIRED_PYTHON_VER = (3, 13, 0)/' const.py
+
+# Relax package version pins
+sed -i "s/[>=]=.*//g" package_constraints.txt 2>/dev/null || true
+
+if [ $LRU_FEED -eq 0 ]; then
+  # replace LRU with simple dict (fallback if lru-dict not in feed)
+  sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' helpers/template/__init__.py
+fi
 
 cd components
 
@@ -527,84 +515,84 @@ cd components
 sed -i -E 's/^( *)filepath.*?= (.*).joinpath\(filename\).resolve\(\)/\1try:\n\1    filepath = \2.joinpath(Path(str(filename) + ".gz")).resolve()\n\1    if not filepath.exists():\n\1        raise FileNotFoundError()\n\1except Exception as e:\n\1    filepath = \2.joinpath(filename).resolve()/' http/static.py
 sed -i -E 's/^( *)headers=\{/\0\n\1    **({hdrs.CONTENT_ENCODING: "gzip"} if filepath.suffix == ".gz" else {}),/' http/static.py
 
-# replace LRU with simple dict
-#sed -i 's/, "lru-dict==[0-9\.]*"//' recorder/manifest.json
-#sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/core.py
-#sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/table_managers/event_types.py
-#sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/__init__.py
-#sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/statistics_meta.py
-#sed -i 's/from lru import LRU/LRU = lambda x: dict()/' http/static.py
-#sed -i 's/from lru import LRU/LRU = lambda x: dict()/' esphome/entry_data.py
+if [ $LRU_FEED -eq 0 ]; then
+  # replace LRU with simple dict in recorder/esphome
+  sed -i 's/, "lru-dict==[0-9\.]*"//' recorder/manifest.json 2>/dev/null || true
+  sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/core.py 2>/dev/null || true
+  sed -i 's/from lru import LRU/LRU = lambda x: dict()/' recorder/table_managers/event_types.py 2>/dev/null || true
+  sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/__init__.py 2>/dev/null || true
+  sed -i -e 's/from lru import LRU/LRU = lambda x: dict()/' -e 's/lru.get_size()/128/' -e 's/lru.set_size/pass  # \0/' recorder/table_managers/statistics_meta.py 2>/dev/null || true
+  sed -i 's/from lru import LRU/LRU = lambda x: dict()/' http/static.py 2>/dev/null || true
+  sed -i 's/from lru import LRU/LRU = lambda x: dict()/' esphome/entry_data.py 2>/dev/null || true
+fi
 
-# relax dependencies
-sed -i 's/sqlalchemy==[0-9\.]*/sqlalchemy/i' recorder/manifest.json
-sed -i 's/pillow==[0-9\.]*/pillow/i' image_upload/manifest.json
-sed -i 's/, UnidentifiedImageError//' image_upload/__init__.py
-sed -i 's/except UnidentifiedImageError/except OSError/' image_upload/__init__.py
-sed -i 's/zeroconf==[0-9\.]*/zeroconf/i' zeroconf/manifest.json
-#sed -i 's/netdisco==[0-9\.]*/netdisco/' discovery/manifest.json
-sed -i 's/PyNaCl==[0-9\.]*/PyNaCl/i' mobile_app/manifest.json
-sed -i 's/defusedxml==[0-9\.]*/defusedxml/i' ssdp/manifest.json
-sed -i 's/netdisco==[0-9\.]*/netdisco/i' ssdp/manifest.json
-sed -i 's/radios==[0-9\.]*/radios/i' radio_browser/manifest.json
-sed -i 's/"webrtc-noise-gain==[0-9\.]*"//i' assist_pipeline/manifest.json
+# relax component manifest pins
+sed -i 's/sqlalchemy==[0-9\.]*/sqlalchemy/i' recorder/manifest.json 2>/dev/null || true
+sed -i 's/pillow==[0-9\.]*/pillow/i' image_upload/manifest.json 2>/dev/null || true
+sed -i 's/, UnidentifiedImageError//' image_upload/__init__.py 2>/dev/null || true
+sed -i 's/except UnidentifiedImageError/except OSError/' image_upload/__init__.py 2>/dev/null || true
+sed -i 's/zeroconf==[0-9\.]*/zeroconf/i' zeroconf/manifest.json 2>/dev/null || true
+sed -i 's/PyNaCl==[0-9\.]*/PyNaCl/i' mobile_app/manifest.json 2>/dev/null || true
+sed -i 's/defusedxml==[0-9\.]*/defusedxml/i' ssdp/manifest.json 2>/dev/null || true
+sed -i 's/netdisco==[0-9\.]*/netdisco/i' ssdp/manifest.json 2>/dev/null || true
+sed -i 's/radios==[0-9\.]*/radios/i' radio_browser/manifest.json 2>/dev/null || true
+sed -i 's/"webrtc-noise-gain==[0-9\.]*"//i' assist_pipeline/manifest.json 2>/dev/null || true
 
 # relax async-upnp-client versions
-sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' yeelight/manifest.json
-sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' upnp/manifest.json
-sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' ssdp/manifest.json
+sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' yeelight/manifest.json 2>/dev/null || true
+sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' upnp/manifest.json 2>/dev/null || true
+sed -i 's/async-upnp-client==[0-9\.]*/async-upnp-client/i' ssdp/manifest.json 2>/dev/null || true
 
 # remove bluetooth support from esphome
-cat esphome/manifest.json | tr '\n' '\r' | sed -E -e 's/, "bluetooth"//g' -e 's/(, )?"bleak[-_]esphome"//' -e 's/,\r    "bleak-esphome==[0-9.]*"//g' | tr '\r' '\n' > esphome/manifest-new.json
-mv esphome/manifest-new.json esphome/manifest.json
-sed -i -e 's/    config_entry.unique_id/    False/' -e 's/from homeassistant.components.bluetooth/#from homeassistant.components.bluetooth/' -e 's/async_scanner_by_source//' esphome/diagnostics.py
-sed -i 's/from.*ESPHomeBluetoothDevice.*/ESPHomeBluetoothDevice = None/' esphome/entry_data.py
-sed -i 's/from.*ESPHomeBluetoothCache.*/ESPHomeBluetoothCache = dict/' esphome/domain_data.py
-sed -i -E 's/from.*async_connect_scanner.*/async def async_connect_scanner(*args, **kwargs): pass/' esphome/manager.py
-
-# Patch mqtt component in 2022.12
-sed -i -e 's/import mqtt/\0\nfrom .util import */g' -e 's/mqtt\.util\.//' mqtt/trigger.py
+if [ -f esphome/manifest.json ]; then
+  cat esphome/manifest.json | tr '\n' '\r' | sed -E -e 's/, "bluetooth"//g' -e 's/(, )?"bleak[-_]esphome"//' -e 's/,\r    "bleak-esphome==[0-9.]*"//g' | tr '\r' '\n' > esphome/manifest-new.json 2>/dev/null || true
+  mv esphome/manifest-new.json esphome/manifest.json 2>/dev/null || true
+  sed -i -e 's/    config_entry.unique_id/    False/' -e 's/from homeassistant.components.bluetooth/#from homeassistant.components.bluetooth/' -e 's/async_scanner_by_source//' esphome/diagnostics.py 2>/dev/null || true
+  sed -i 's/from.*ESPHomeBluetoothDevice.*/ESPHomeBluetoothDevice = None/' esphome/entry_data.py 2>/dev/null || true
+  sed -i 's/from.*ESPHomeBluetoothCache.*/ESPHomeBluetoothCache = dict/' esphome/domain_data.py 2>/dev/null || true
+  sed -i -E 's/from.*async_connect_scanner.*/async def async_connect_scanner(*args, **kwargs): pass/' esphome/manager.py 2>/dev/null || true
+fi
 
 # drop ffmpeg requirement from tts
-sed -i 's/, "ffmpeg"//' tts/manifest.json
-sed -i 's/ ffmpeg,//' tts/__init__.py
+sed -i 's/, "ffmpeg"//' tts/manifest.json 2>/dev/null || true
+sed -i 's/ ffmpeg,//' tts/__init__.py 2>/dev/null || true
 
 # drop numpy dep from stream
-sed -i -e 's/"ha-av[^"]*", //' -e 's/, "numpy[^"]*"//' stream/manifest.json
+sed -i -e 's/"ha-av[^"]*", //' -e 's/, "numpy[^"]*"//' stream/manifest.json 2>/dev/null || true
 
 # soft float, like mips32 don't have numpy. Cut it off
 if ( ! ls /usr/lib/python${PYTHON_VERSION}/site-packages/ | grep -q numpy ); then
-  sed -i -e 's/import numpy as np/np = None/' -e 's/np\.ndarray/Any/g' -e 's/TRANSFORM_IMAGE_FUNCTION[orientation]//' stream/core.py
+  sed -i -e 's/import numpy as np/np = None/' -e 's/np\.ndarray/Any/g' -e 's/TRANSFORM_IMAGE_FUNCTION\[orientation\]//' stream/core.py 2>/dev/null || true
 fi
-#sed -i -e 's/import av/#/' -e 's/av.logging/#/' stream/__init__.py
-sed -i 's/import av/av = None/' stream/__init__.py
-sed -i 's/import av/av = None/' stream/worker.py
-sed -i 's/import av/av = None/' stream/recorder.py
+sed -i 's/import av/av = None/' stream/__init__.py 2>/dev/null || true
+sed -i 's/import av/av = None/' stream/worker.py 2>/dev/null || true
+sed -i 's/import av/av = None/' stream/recorder.py 2>/dev/null || true
 
-# replace c-based fnv hash
-sed -i 's/fnv-hash-fast==[0-9\.]*/fnvhash/i' recorder/manifest.json
-sed -i 's/from fnv_hash_fast/from fnvhash/' recorder/db_schema.py
+# replace c-based fnv hash with pure-python fallback if not in feed
+if [ $FNV_FEED -eq 0 ]; then
+  sed -i 's/fnv-hash-fast==[0-9\.]*/fnvhash/i' recorder/manifest.json 2>/dev/null || true
+  sed -i 's/from fnv_hash_fast/from fnvhash/' recorder/db_schema.py 2>/dev/null || true
+fi
 
 if [ $NEED_ZHA ]; then
   # remove unwanted zha requirements
-  sed -i 's/"bellows==[0-9\.]*",//i' zha/manifest.json
-  sed -i 's/"zigpy-cc==[0-9\.]*",//i' zha/manifest.json
-  sed -i 's/"zigpy-deconz==[0-9\.]*",//i' zha/manifest.json
-  sed -i 's/"zigpy-xbee==[0-9\.]*",//i' zha/manifest.json
-  sed -i 's/"zigpy-znp==[0-9\.]*",//i' zha/manifest.json
-  sed -i 's/"universal-silabs-flasher==[0-9\.]*",//i' zha/manifest.json
-  sed -i 's/RadioType.ezsp/object()  # \0/' zha/__init__.py
+  sed -i 's/"bellows==[0-9\.]*",//i' zha/manifest.json 2>/dev/null || true
+  sed -i 's/"zigpy-cc==[0-9\.]*",//i' zha/manifest.json 2>/dev/null || true
+  sed -i 's/"zigpy-deconz==[0-9\.]*",//i' zha/manifest.json 2>/dev/null || true
+  sed -i 's/"zigpy-xbee==[0-9\.]*",//i' zha/manifest.json 2>/dev/null || true
+  sed -i 's/"zigpy-znp==[0-9\.]*",//i' zha/manifest.json 2>/dev/null || true
+  sed -i 's/"universal-silabs-flasher==[0-9\.]*",//i' zha/manifest.json 2>/dev/null || true
+  sed -i 's/RadioType.ezsp/object()  # \0/' zha/__init__.py 2>/dev/null || true
 
-  sed -i -E -e 's/import (bellows|zigpy_deconz|zigpy_cc|zigpy_xbee|zigpy_znp|zigpy_zigate).*application/# \0/' -e 's/([ ]*)([a-z_.]*.ControllerApplication,)/\1None # \2/g' zha/core/const.py
-  sed -i -E 's/"(bellows|zigpy_deconz|zigpy_xbee|zigpy_znp|zigpy_zigate)":/# "\1":/' zha/diagnostics.py
-  # sed -i -E 's/import (bellows|zigpy_deconz|zigpy_xbee|zigpy_znp)/# import \1/' zha/diagnostics.py
-  sed -i -e '/from homeassistant.components.homeassistant_hardware.silabs_multiprotocol_addon/,/] = 15/d' zha/core/gateway.py
-  sed -i 's/    RadioType\./    # RadioType./' zha/radio_manager.py
-  sed -i 's/from bellows.config import CONF_USE_THREAD/from .core.const import CONF_USE_THREAD/' zha/radio_manager.py
-  sed -i -e 's/from homeassistant.components.homeassistant_hardware import silabs_multiprotocol_addon/silabs_multiprotocol_addon = None  #/' -e 's/from homeassistant.components.homeassistant_yellow/yellow_hardware = None  #/' -e 's/ports = await hass/return await hass/' zha/config_flow.py
+  sed -i -E -e 's/import (bellows|zigpy_deconz|zigpy_cc|zigpy_xbee|zigpy_znp|zigpy_zigate).*application/# \0/' -e 's/([ ]*)([a-z_.]*.ControllerApplication,)/\1None # \2/g' zha/core/const.py 2>/dev/null || true
+  sed -i -E 's/"(bellows|zigpy_deconz|zigpy_xbee|zigpy_znp|zigpy_zigate)":/# "\1":/' zha/diagnostics.py 2>/dev/null || true
+  sed -i -e '/from homeassistant.components.homeassistant_hardware.silabs_multiprotocol_addon/,/] = 15/d' zha/core/gateway.py 2>/dev/null || true
+  sed -i 's/    RadioType\./    # RadioType./' zha/radio_manager.py 2>/dev/null || true
+  sed -i 's/from bellows.config import CONF_USE_THREAD/from .core.const import CONF_USE_THREAD/' zha/radio_manager.py 2>/dev/null || true
+  sed -i -e 's/from homeassistant.components.homeassistant_hardware import silabs_multiprotocol_addon/silabs_multiprotocol_addon = None  #/' -e 's/from homeassistant.components.homeassistant_yellow/yellow_hardware = None  #/' -e 's/ports = await hass/return await hass/' zha/config_flow.py 2>/dev/null || true
 
-  cp zha/repairs/wrong_silabs_firmware.py zha/repairs/__wrong_silabs_firmware.py
-cat <<'EOF' > zha/repairs/wrong_silabs_firmware.py
+  cp zha/repairs/wrong_silabs_firmware.py zha/repairs/__wrong_silabs_firmware.py 2>/dev/null || true
+  cat <<'EOF' > zha/repairs/wrong_silabs_firmware.py 2>/dev/null || true
 ISSUE_WRONG_SILABS_FIRMWARE_INSTALLED = "wrong_silabs_firmware_installed"
 async def warn_on_wrong_silabs_firmware(hass, device_path): return False
 class AlreadyRunningEZSP(Exception): pass
@@ -612,25 +600,29 @@ EOF
 fi
 
 if [ $LUMI_GATEWAY ]; then
-  sed -i 's/"zigpy-zigate[<=>]=[0-9\.]*"/"zigpy-zigate"/i' zha/manifest.json
-  sed -i -E -e 's/#[ ]*(.*zigate.*application)/\1/' -e 's/None # (zigpy_zigate)/\1/' zha/core/const.py
-  sed -i -E 's/# ("zigpy_zigate")/\1/' zha/diagnostics.py
-  sed -i 's/    # RadioType\.zigate/    RadioType.zigate/' zha/radio_manager.py
+  sed -i 's/"zigpy-zigate[<=>]=[0-9\.]*"/"zigpy-zigate"/i' zha/manifest.json 2>/dev/null || true
+  sed -i -E -e 's/#[ ]*(.*zigate.*application)/\1/' -e 's/None # (zigpy_zigate)/\1/' zha/core/const.py 2>/dev/null || true
+  sed -i -E 's/# ("zigpy_zigate")/\1/' zha/diagnostics.py 2>/dev/null || true
+  sed -i 's/    # RadioType\.zigate/    RadioType.zigate/' zha/radio_manager.py 2>/dev/null || true
 fi
 if [ $GTW360_GATEWAY ]; then
-  sed -i 's/"zigpy-zigate[<=>]=[0-9\.]*"/"zigpy-zboss"/i' zha/manifest.json
-  sed -i -E -e 's/import.*zigpy_znp.*application/\0\nimport zigpy_zboss.zigbee.application/' -e 's/([ ]*)xbee = [(]/\1zboss = ("ZBOSS = Nordic ZBOSS Zigbee radios: nRF52840, nrf5340", zigpy_zboss.zigbee.application.ControllerApplication)\n\0/' zha/core/const.py
+  sed -i 's/"zigpy-zigate[<=>]=[0-9\.]*"/"zigpy-zboss"/i' zha/manifest.json 2>/dev/null || true
+  sed -i -E -e 's/import.*zigpy_znp.*application/\0\nimport zigpy_zboss.zigbee.application/' -e 's/([ ]*)xbee = [(]/\1zboss = ("ZBOSS = Nordic ZBOSS Zigbee radios: nRF52840, nrf5340", zigpy_zboss.zigbee.application.ControllerApplication)\n\0/' zha/core/const.py 2>/dev/null || true
 fi
 
-sed -i 's/"cloud",//' default_config/manifest.json
-sed -i 's/"dhcp",//' default_config/manifest.json
-sed -i 's/"mobile_app",//' default_config/manifest.json
-sed -i 's/"updater",//' default_config/manifest.json
-sed -i 's/"usb",//' default_config/manifest.json
-sed -i 's/"bluetooth",//' default_config/manifest.json
-sed -i 's/"assist_pipeline",//' default_config/manifest.json
-sed -i 's/"stream",//' default_config/manifest.json
-sed -i 's/==[0-9\.]*//g' frontend/manifest.json
+# drop dev-only aiogithubapi dependency from frontend
+sed -i 's/from .pr_download import download_pr_artifact/# from .pr_download import download_pr_artifact/' frontend/__init__.py 2>/dev/null || true
+sed -i 's/from aiogithubapi import/# from aiogithubapi import/' frontend/pr_download.py 2>/dev/null || true
+
+sed -i 's/"cloud",//' default_config/manifest.json 2>/dev/null || true
+sed -i 's/"dhcp",//' default_config/manifest.json 2>/dev/null || true
+sed -i 's/"mobile_app",//' default_config/manifest.json 2>/dev/null || true
+sed -i 's/"updater",//' default_config/manifest.json 2>/dev/null || true
+sed -i 's/"usb",//' default_config/manifest.json 2>/dev/null || true
+sed -i 's/"bluetooth",//' default_config/manifest.json 2>/dev/null || true
+sed -i 's/"assist_pipeline",//' default_config/manifest.json 2>/dev/null || true
+sed -i 's/"stream",//' default_config/manifest.json 2>/dev/null || true
+sed -i 's/==[0-9\.]*//g' frontend/manifest.json 2>/dev/null || true
 
 cd ../..
 # integrations and helper sections leave as is, only nested items
@@ -650,48 +642,128 @@ sed -i 's/_disabled_esphomelib./_esphomelib./' homeassistant/generated/zeroconf.
 sed -i 's/_disabled_miio./_miio./' homeassistant/generated/zeroconf.py
 
 # disabling all supported_brands
-if [ -f homeassistant/generated/supported_brands.py ]; then  # 2022.8
+if [ -f homeassistant/generated/supported_brands.py ]; then
   sed -i 's/^    /    # /' homeassistant/generated/supported_brands.py
 else
   mkdir -p homeassistant/brands-disabled/
   mv homeassistant/brands/* homeassistant/brands-disabled/
 fi
 
-# backport orjson to classic json
-# helpers
-sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*,/\n/' -e 's/.as_posix/.as_posix()\n    if isinstance(obj, (datetime.date, datetime.time)):\n        return obj.isoformat/' -e 's/json_bytes /json_bytes_old /' -e 's/return json_bytes(data)/return _json_default_encoder(data)/' -e 's/json_fragment = .*/json_fragment = json.loads/' -e 's/mode = "wb"/mode = "w"/' homeassistant/helpers/json.py
-echo 'def json_bytes(data): return json.dumps(data, default=json_encoder_default).encode("utf-8")' >> homeassistant/helpers/json.py
-# util
-sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*/\n/' homeassistant/util/json.py
-# aiohttp_client.py
-sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' homeassistant/helpers/aiohttp_client.py
-#sed -i -E -e 's/orjson/json/g' -e 's/\.decode(.*)//' -e 's/(b64(de|en)code.*?)/\1.decode("utf-8")/' -e 's/option=option/#option=option/' -e 's/json.OPT_[A-Z_0-9]*/0/g'  homeassistant/helpers/template.py
+# backport orjson to classic json if not available from feed
+if [ $ORJSON_FEED -eq 0 ]; then
+  # helpers/json.py
+  sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*,/\n/' -e 's/.as_posix/.as_posix()\n    if isinstance(obj, (datetime.date, datetime.time)):\n        return obj.isoformat/' -e 's/json_bytes /json_bytes_old /' -e 's/return json_bytes(data)/return _json_default_encoder(data)/' -e 's/json_fragment = .*/json_fragment = json.loads/' -e 's/mode = "wb"/mode = "w"/' homeassistant/helpers/json.py
+  echo 'def json_bytes(data): return json.dumps(data, default=json_encoder_default).encode("utf-8")' >> homeassistant/helpers/json.py
+  # util/json.py
+  sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' -e 's/option=.*/\n/' homeassistant/util/json.py
+  # helpers/aiohttp_client.py
+  sed -i -e 's/orjson/json/' -e 's/\.decode(.*)//' homeassistant/helpers/aiohttp_client.py
+  # helpers/template/__init__.py
+  sed -i -E -e 's/orjson/json/g' -e 's/\.decode(.*)//' -e 's/(b64(de|en)code.*?)/\1.decode("utf-8")/' -e 's/option=option/#option=option/' -e 's/json.OPT_[A-Z_0-9]*/0/g' homeassistant/helpers/template/__init__.py
+fi
 
-# disable aiohttp_zlib_ng
-sed -i -E -e 's/"aiohttp-zlib-ng[^"]*"//' -e 's/(dispatcher[^,]*?),/\1/' homeassistant/components/http/manifest.json
-sed -i -e 's/from aiohttp_zlib_ng/#from aiohttp_zlib_ng/' -e 's/enable_zlib_ng/#enable_zlib_ng/' homeassistant/components/http/__init__.py
+# disable aiohttp_fast_zlib / aiohttp_zlib_ng
+sed -i -E -e 's/"aiohttp-zlib-ng[^"]*"//' -e 's/"aiohttp-fast-zlib[^"]*"//' -e 's/(dispatcher[^,]*?),/\1/' homeassistant/components/http/manifest.json 2>/dev/null || true
+sed -i -e 's/from aiohttp_zlib_ng/#from aiohttp_zlib_ng/' -e 's/enable_zlib_ng/#enable_zlib_ng/' homeassistant/components/http/__init__.py 2>/dev/null || true
+sed -i -e '/async_import_module.*aiohttp_fast_zlib/d' homeassistant/components/http/__init__.py 2>/dev/null || true
 
-# fix for aiohttp < 3.9 (3.8.5 in 23.05)
-# TODO: revert https://github.com/home-assistant/core/pull/104175
-sed -i 's/, handler_cancellation=True/,  # \0/' homeassistant/components/http/__init__.py
+# Remove aiohasupervisor requirement from hassio manifest (no supervisor on OpenWrt)
+sed -i '/aiohasupervisor/d' homeassistant/components/hassio/manifest.json 2>/dev/null || true
+# Replace hassio with stub (many files import aiohasupervisor)
+rm -f homeassistant/components/hassio/*.py homeassistant/components/hassio/*.pyi 2>/dev/null || true
+cat > homeassistant/components/hassio/__init__.py << 'HASSIOEOF'
+"""Stub for hassio - not available on OpenWrt."""
+HassioNotReadyError = type("HassioNotReadyError", (Exception,), {})
+AddonError = type("AddonError", (Exception,), {})
+AddonState = type("AddonState", (object,), {})
+AddonManager = type("AddonManager", (object,), {})
+async def get_supervisor_info(hass): return {}
+async def get_addons_info(hass): return {}
+
+async def async_setup(hass, config):
+    return True
+HASSIOEOF
+# Don't try to load hassio on analytics/backup
+sed -i 's/"hassio",//' homeassistant/components/analytics/manifest.json 2>/dev/null || true
+sed -i 's/"hassio",//' homeassistant/components/backup/manifest.json 2>/dev/null || true
+# analytics still imports HassioNotReadyError at module level
+sed -i 's/from homeassistant.components.hassio import HassioNotReadyError/from homeassistant.components.hassio import HassioNotReadyError/' homeassistant/components/analytics/__init__.py 2>/dev/null || true
+
+# Remove web_rtc and usage_prediction dependencies (not included in minimal build)
+sed -i 's/"web_rtc",//' homeassistant/components/camera/manifest.json 2>/dev/null || true
+sed -i 's/"web_rtc",//' homeassistant/components/cloud/manifest.json 2>/dev/null || true
+sed -i '/usage_prediction/d; /go2rtc/d' homeassistant/components/default_config/manifest.json 2>/dev/null || true
+# TurboJPEG mock - avoids needing libturbojpeg C library
+cat > /usr/lib/python${PYTHON_VERSION}/site-packages/turbojpeg.py << 'TJPEGEOF'
+class TurboJPEG:
+    def __init__(self, lib_path=None):
+        pass
+TJPEGEOF
+
+# Create minimal stub for web_rtc component (camera imports from it)
+mkdir -p homeassistant/components/web_rtc
+cat > homeassistant/components/web_rtc/__init__.py << 'WEBRTCEOF'
+async def async_get_ice_servers(hass):
+    return []
+
+async def async_setup(hass, config):
+    return True
+WEBRTCEOF
+cat > homeassistant/components/web_rtc/manifest.json << 'WEBRTCMEOF'
+{
+  "domain": "web_rtc",
+  "name": "WebRTC",
+  "codeowners": [],
+  "dependencies": [],
+  "documentation": "",
+  "requirements": [],
+  "version": "0.0.0"
+}
+WEBRTCMEOF
 
 # Patch installation type
 sed -i 's/"installation_type": "Unknown"/"installation_type": "Home Assistant on OpenWrt"/' homeassistant/helpers/system_info.py
+
+# Replace uv with pip for package installation (uv is 25MB+)
+python3 << 'PYPATCH'
+import re
+with open('homeassistant/util/package.py') as f:
+    c = f.read()
+
+# Remove "uv" from ["uv", "pip", "install"] and ["uv", "pip", "list"]
+c = c.replace('"-m",\n        "uv",\n        "pip",\n        "install"', '"-m",\n        "pip",\n        "install"')
+c = c.replace('"-m",\n        "uv",\n        "pip",\n        "list"', '"-m",\n        "pip",\n        "list"')
+# Remove --index-strategy / unsafe-first-match
+c = re.sub(r'"--index-strategy",\s*"unsafe-first-match",\s*', '', c)
+# Remove the entire elif block that adds --python (uv-specific workaround)
+c = re.sub(
+    r'    elif \([\s\S]*?        args \+= \["--python", sys\.executable, "--target", abs_target\]',
+    '',
+    c,
+)
+c = c.replace('UV_EXTRA_INDEX_URL', 'PIP_EXTRA_INDEX_URL')
+c = c.replace('_UV_ENV_PYTHON_VARS', '_PIP_ENV')
+
+with open('homeassistant/util/package.py', 'w') as f:
+    f.write(c)
+PYPATCH
+
 find . -type f -exec touch {} +
-sed -i "s/[>=]=.*//g" setup.cfg
 
-rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/homeassistant*
-
-if [ ! -f setup.py ]; then
+# Strip dependencies from pyproject.toml
+if [ -f pyproject.toml ]; then
   awk -v RS='dependencies[^\]]*?\n\]' -v ORS= '1;NR==1{printf "dependencies = []"}' pyproject.toml > pyproject-new.toml && mv pyproject-new.toml pyproject.toml
   sed -i -E -e 's/(setuptools)[~=]{1,2}[\.0-9]*/\1/' -e 's/(wheel)[~=]{1,2}[\.0-9]*/\1/' pyproject.toml
-else
-  sed -i 's/install_requires=REQUIRES/install_requires=[]/' setup.py
 fi
+# Strip setup.cfg requirements if present
+sed -i "s/[>=]=.*//g" setup.cfg 2>/dev/null || true
+
+rm -rf /usr/lib/python${PYTHON_VERSION}/site-packages/homeassistant* 2>/dev/null || true
+
 HA_BUILD=${STORAGE_TMP}/ha-build
 mkdir -p ${HA_BUILD}
 ln -s ${HA_BUILD} ./build
-TMPDIR=${STORAGE_TMP} pip3 install . --no-cache-dir -c /tmp/owrt_constraints.txt
+TMPDIR=${STORAGE_TMP} pip3 install . --no-cache-dir --ignore-requires-python -c /tmp/owrt_constraints.txt
 cd ../
 rm -rf homeassistant-${HOMEASSISTANT_VERSION}/ ${HA_BUILD} ${STORAGE_TMP}
 
