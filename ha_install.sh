@@ -9,7 +9,7 @@ is_apk() {
 
 get_ha_version()
 {
-  wget -q -O- https://pypi.org/simple/homeassistant/ | grep ${HOMEASSISTANT_MAJOR_VERSION} | tail -n 1 | cut -d "-" -f2 | cut -d "." -f1,2,3
+  wget -q -T 30 -O- https://pypi.org/simple/homeassistant/ | grep ${HOMEASSISTANT_MAJOR_VERSION} | tail -n 1 | cut -d "-" -f2 | cut -d "." -f1,2,3
 }
 
 get_python_version()
@@ -89,10 +89,10 @@ echo "=========================================="
 echo " Installing Home Assistant ${HOMEASSISTANT_VERSION} ..."
 echo "=========================================="
 
-wget -q https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/homeassistant/package_constraints.txt -O /tmp/ha_package_constraints.txt
+wget -q -T 30 https://raw.githubusercontent.com/home-assistant/core/${HOMEASSISTANT_VERSION}/homeassistant/package_constraints.txt -O /tmp/ha_package_constraints.txt || true
 
 HOMEASSISTANT_FRONTEND_VERSION=$(get_version home-assistant-frontend)
-NABUCASA_VER=$(get_version hass-nabucasa)
+NABUCASA_VER=1.15.0  # 2.x requires Python >=3.14
 ZIGPY_ZBOSS_VER=1.2.0
 
 if pgrep -a -f "usr/bin/hass"; then
@@ -171,6 +171,9 @@ pkg_install \
   python3-yaml
 
 # Optional packages (may not be available on all platforms/versions)
+# Build tools needed for compiling C extensions from PyPI (no wheels for armv7l-musl)
+pkg_install gcc python3-dev 2>/dev/null || true
+
 pkg_install python3-orjson 2>/dev/null && ORJSON_FEED=1 || ORJSON_FEED=0
 pkg_install python3-lru-dict 2>/dev/null && LRU_FEED=1 || LRU_FEED=0
 pkg_install python3-fnv-hash-fast 2>/dev/null && FNV_FEED=1 || FNV_FEED=0
@@ -190,7 +193,9 @@ find /usr/lib/python${PYTHON_VERSION}/site-packages/numpy -iname tests -print0 2
 echo "Install base requirements from PyPI..."
 pip3 install --no-cache-dir wheel
 pip3 freeze > /tmp/freeze.txt
-grep -E 'aiohttp|async-timeout|crypto|YAML|zeroconf|orjson|lru-dict|fnv' /tmp/freeze.txt > /tmp/owrt_constraints.txt
+# zeroconf excluded: feed version may be too old for aiohttp-asyncmdnsresolver
+# pycares excluded: feed version is 4.x, but may conflict with aiodns/aiodiscover
+grep -E 'aiohttp|async-timeout|crypto|YAML|orjson|lru-dict|fnv' /tmp/freeze.txt > /tmp/owrt_constraints.txt
 
 mkdir -p ${STORAGE_TMP}
 
@@ -220,12 +225,12 @@ $(version aiozoneinfo)
 $(version webrtc-models)
 $(version annotatedyaml)
 $(version aiohttp_cors)
-$(version aiohttp-asyncmdnsresolver)
+# aiohttp-asyncmdnsresolver skipped (needs aiodns>=4.0.4 -> pycares>=5.0.0, not buildable on armv7l-musl)
 $(version cronsim)
 $(version voluptuous-openapi)
 $(version securetar)
 $(version aiodhcpwatcher)
-$(version aiodiscover)
+# aiodiscover skipped (needs aiodns>=4.0.4, not buildable on armv7l-musl)
 $(version httpx)
 $(version hassil)
 $(version home-assistant-intents)
@@ -237,7 +242,7 @@ $(version ciso8601)
 $(version audioop-lts)
 $(version standard-aifc)
 $(version standard-telnetlib)
-$(version home-assistant-bluetooth)
+# home-assistant-bluetooth skipped (needs dbus-fast, a Rust package not buildable on armv7l-musl)
 
 # Manifest requirements (in package_constraints.txt)
 mutagen
@@ -248,12 +253,16 @@ hass-configurator==0.4.1
 EOF
 
 if [ $NEED_ZHA ]; then
-  cat << EOF >> /tmp/requirements.txt
-$(version pyserial)
-$(version zha-quirks)
-$(version zigpy)
+   cat << EOF >> /tmp/requirements.txt
+pyserial>=3.5
+zha-quirks>=0.0.13
+zigpy>=0.73.0
+# jsonschema<4.18 avoids rpds-py (Rust package, not buildable on armv7l-musl)
+jsonschema>=4.0.0,<4.18.0
 EOF
 fi
+
+
 
 if [ $LUMI_GATEWAY ]; then
   cat << EOF >> /tmp/requirements.txt
@@ -269,9 +278,11 @@ if [ $GTW360_GATEWAY ]; then
 fi
 
 if [ $NEED_ZHA ]; then
-  # show internal serial ports for Xiaomi Gateway
-  sed -i 's/ttyXRUSB\*/ttymxc[1-9]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
-  sed -i 's/if info.subsystem != "platform"]/]/' /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py
+  # show internal serial ports for Xiaomi Gateway (handle .py or .pyc)
+  for f in /usr/lib/python${PYTHON_VERSION}/site-packages/serial/tools/list_ports_linux.py*; do
+    [ -f "$f" ] && sed -i 's/ttyXRUSB\*/ttymxc[1-9]/' "$f" 2>/dev/null || true
+    [ -f "$f" ] && sed -i 's/if info.subsystem != "platform"]/]/' "$f" 2>/dev/null || true
+  done
 fi
 
 # fix deps
@@ -298,7 +309,7 @@ cd ${STORAGE_TMP}
 rm -rf home-assistant-frontend*
 
 FRONTEND_URL=$(wget -q -O- https://pypi.org/simple/home-assistant-frontend/ | grep home_assistant_frontend-${HOMEASSISTANT_FRONTEND_VERSION}-py3 | cut -d '"' -f2 | head -1)
-wget -q "$FRONTEND_URL" -O /tmp/home-assistant-frontend.zip
+wget -q -T 30 "$FRONTEND_URL" -O /tmp/home-assistant-frontend.zip
 unzip -qqo /tmp/home-assistant-frontend.zip -d home-assistant-frontend
 rm -rf /tmp/home-assistant-frontend.zip
 cd home-assistant-frontend
@@ -332,12 +343,13 @@ pip3 install --no-cache-dir --upgrade typing-extensions || true
 
 cd /tmp
 rm -rf homeassistant.tar.gz homeassistant-${HOMEASSISTANT_VERSION} .cache pip-*
-wget https://pypi.python.org/packages/source/h/homeassistant/homeassistant-${HOMEASSISTANT_VERSION}.tar.gz -O homeassistant.tar.gz
+wget -T 30 https://pypi.python.org/packages/source/h/homeassistant/homeassistant-${HOMEASSISTANT_VERSION}.tar.gz -O homeassistant.tar.gz
 
 cat << EOF > /tmp/ha_components.txt
 __init__.py
 air_quality
 alarm_control_panel
+ai_task
 alert
 alexa
 analytics
@@ -748,6 +760,43 @@ with open('homeassistant/util/package.py', 'w') as f:
     f.write(c)
 PYPATCH
 
+# Apply Python 3.13 compat patches (HA 2026.7 targets Python 3.14)
+python3 << 'PY313COMPAT'
+import re, glob
+
+# Fix 1: 'except X, Y:' -> 'except (X, Y):' (PEP 758, Python 3.14+ only)
+exc_pattern = re.compile(
+    r'^(\s*except\s+)'
+    r'([A-Za-z_.][A-Za-z0-9_.]*(?:\s*,\s*[A-Za-z_.][A-Za-z0-9_.]*)+)'
+    r'(\s*:\s*)$'
+)
+
+# Fix 2: Add 'from __future__ import annotations' (PEP 563) to all .py files
+# to replicate Python 3.14's default deferred annotation evaluation (PEP 649)
+
+for file in glob.glob('**/*.py', recursive=True):
+    with open(file) as f:
+        text = f.read()
+    changed = False
+
+    # Fix PEP 758 exception syntax
+    new_text = exc_pattern.sub(r'\1(\2)\3', text, count=0)
+    if new_text != text:
+        changed = True
+        text = new_text
+
+    # Add annotations future import
+    has_future = 'from __future__' in text.split('\n')[0] if text else False
+    if not has_future:
+        text = 'from __future__ import annotations\n' + text
+        changed = True
+
+    if changed:
+        with open(file, 'w') as f:
+            f.write(text)
+        print(f'Patched: {file}')
+PY313COMPAT
+
 find . -type f -exec touch {} +
 
 # Strip dependencies from pyproject.toml
@@ -765,7 +814,101 @@ mkdir -p ${HA_BUILD}
 ln -s ${HA_BUILD} ./build
 TMPDIR=${STORAGE_TMP} pip3 install . --no-cache-dir --ignore-requires-python -c /tmp/owrt_constraints.txt
 cd ../
-rm -rf homeassistant-${HOMEASSISTANT_VERSION}/ ${HA_BUILD} ${STORAGE_TMP}
+
+# Apply Python 3.13 compatibility patches to installed HA
+python3 << 'POSTINSTALL'
+import os, sys
+
+SITE_PACKAGES = f'/usr/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages'
+HA_DIR = os.path.join(SITE_PACKAGES, 'homeassistant')
+
+# 1. Create annotationlib compat shim (Python 3.14 stdlib, missing in 3.13)
+annotationlib_path = os.path.join(SITE_PACKAGES, 'annotationlib.py')
+if not os.path.exists(annotationlib_path):
+    with open(annotationlib_path, 'w') as f:
+        f.write('''"""Compatibility shim for Python 3.14 annotationlib module."""
+from __future__ import annotations
+import inspect
+from enum import IntEnum
+
+class Format(IntEnum):
+    FORWARDREF = 1
+    SOURCE = 2
+    VALUE = 3
+
+def get_annotations(obj, *, globals=None, locals=None, format=Format.FORWARDREF):
+    return inspect.get_annotations(obj, globals=globals, locals=locals)
+''')
+    print(f'Created: {annotationlib_path}')
+
+# 2. Create stubs for modules that require C extensions not available on armv7l
+stubs = {
+    'habluetooth': {
+        '__init__.py': '''
+from __future__ import annotations
+
+class BluetoothServiceInfoBleak:
+    pass
+
+class BluetoothServiceInfo:
+    pass
+
+class BluetoothManagementService:
+    pass
+
+class BaseBluetoothScannerCoordinator:
+    pass
+''',
+    },
+    'home_assistant_bluetooth': {
+        '__init__.py': 'from __future__ import annotations\n',
+    },
+    'aiohttp_asyncmdnsresolver': {
+        '__init__.py': 'from __future__ import annotations\n',
+        'api.py': '''
+from __future__ import annotations
+import asyncio
+import socket
+
+class AsyncDualMDNSResolver:
+    """Stub resolver that falls back to regular DNS."""
+    def __init__(self, *args, **kwargs):
+        self._loop = asyncio.get_event_loop()
+
+    async def resolve(self, host, port=0, family=socket.AF_INET):
+        return await self._loop.getaddrinfo(host, port, family=family, type=socket.SOCK_STREAM)
+
+    async def close(self):
+        pass
+''',
+    },
+    'aiodiscover': {
+        '__init__.py': 'from __future__ import annotations\n',
+        'discovery.py': 'from __future__ import annotations\n',
+    },
+    'async_upnp_client': {
+        '__init__.py': 'from __future__ import annotations\n',
+        'aiohttp/__init__.py': '''
+from __future__ import annotations
+
+class AiohttpSessionRequester:
+    def __init__(self, *args, **kwargs): pass
+''',
+    },
+}
+
+for pkg_name, files in stubs.items():
+    pkg_dir = os.path.join(SITE_PACKAGES, pkg_name)
+    if not os.path.exists(pkg_dir):
+        os.makedirs(pkg_dir, exist_ok=True)
+        for fname, content in files.items():
+            fpath = os.path.join(pkg_dir, fname)
+            with open(fpath, 'w') as f:
+                f.write(content)
+            print(f'Created stub: {fpath}')
+POSTINSTALL
+
+rm -rf ${HA_BUILD} ${STORAGE_TMP}
 
 IP=$(ip a | grep "inet .*br-lan" | cut -d " " -f6 | tail -1 | cut -d / -f1)
 if [ -z "$IP" ]; then
